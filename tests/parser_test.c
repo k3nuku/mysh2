@@ -47,7 +47,8 @@ int main()
   assert(strncmp(argv[0], "cat", strlen("cat")) == 0);
   assert(strncmp(argv[1], "some.txt", strlen("some.txt")) == 0);
   assert(strncmp(argv[2], ">", strlen(">")) == 0);
-  assert(strncmp(argv[3], "what I am writing", strlen("what I am writing")) == 0);
+  assert(strncmp(argv[3], "what I am writing",
+                 strlen("what I am writing")) == 0);
   assert(argv[4] == NULL);
   FREE_2D_ARRAY(argc, argv);
 
