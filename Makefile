@@ -1,9 +1,9 @@
 all:
-	gcc -o mysh ./src/mysh.c -I./include
+	gcc -o mysh ./src/mysh.c ./src/commands.c ./lib/parser.c ./lib/fs.c -I./include
 
 unit_test:
-	gcc -o unit_test1 ./lib/parser.c ./tests/parser_test.c -I./include
-	./unit_test1
+	gcc -o unit_test ./lib/parser.c ./tests/parser_test.c -I./include
+	./unit_test
 
 func_test:
 	touch scoring.txt
