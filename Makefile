@@ -1,9 +1,11 @@
+CC=gcc -std=c99
+
 all:
-	gcc -o mysh ./src/mysh.c ./src/commands.c \
+	$(CC) -o mysh ./src/mysh.c ./src/commands.c \
 		./lib/parser.c ./lib/fs.c -I./include
 
 unit_test:
-	gcc -o unit_test ./lib/parser.c ./tests/parser_test.c -I./include
+	$(CC) -o unit_test ./lib/parser.c ./tests/parser_test.c -I./include
 	./unit_test
 
 func_test:
