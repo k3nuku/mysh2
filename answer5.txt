@@ -1,4 +1,4 @@
-/tmp/ajou
 a
 b
 c
+/tmp/ajou
