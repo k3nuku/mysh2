@@ -1,4 +1,4 @@
-rm -rf /tmp/ajou
+/bin/rm -rf /tmp/ajou
 /bin/mkdir /tmp/ajou
 /usr/bin/touch /tmp/ajou/a
 /usr/bin/touch /tmp/ajou/b
