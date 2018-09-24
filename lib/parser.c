@@ -87,6 +87,10 @@ void parse_command(const char* input,
   if (temp_argc > -1) // 정상이면
   {
     free(token);
+
+    if (temp_argv[temp_argc - 1][strlen(temp_argv[temp_argc - 1]) - 1] == '\n')
+      temp_argv[temp_argc - 1][strlen(temp_argv[temp_argc - 1]) - 1] = '\0';
+
     *argv = temp_argv;
   }
   else free(argv); // 에러나면
