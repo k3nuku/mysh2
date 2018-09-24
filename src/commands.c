@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 static struct command_entry commands[] =
 {
@@ -35,48 +36,63 @@ struct command_entry* fetch_command(const char* command_name)
 {
   struct command_entry* ret_entry;
 
-  ret_entry = (struct command_entry*)malloc(sizeof(struct command_entry*));
-  ret_entry->command_name = command_name;
-  
-  if (strcmp(ret_entry->command_name, "pwd") == 0)
-  {
-    ret_entry->command_func = &do_pwd;
-    ret_entry->err = &err_pwd;
-  }
+  if (strcmp(command_name, "pwd") == 0)
+    ret_entry = &commands[0];
   else if (strcmp(command_name, "cd") == 0)
-  {
-    ret_entry->command_func = &do_cd;
-    ret_entry->err = &err_cd;
-  }
+    ret_entry = &commands[1];
   else return NULL;
-
+  
   return ret_entry;
 }
 
 int do_pwd(int argc, char** argv)
 {
-  char path[1024];
+  errno = 0;
 
-  if (getcwd(path, 1024) == NULL)
-    return -1;
-  else printf("%s\n", path);
+  char path[MAX_DIR_LENGTH];
 
-  return 0;
+  if (getcwd(path, MAX_DIR_LENGTH))
+    printf("%s\n", path);
+
+  return errno ? errno : 0;
 }
 
-void err_pwd(int err_code)
+void err_pwd(int err_code, char** argv)
 {
   printf("error occured while printing working directory\n");
 }
 
 int do_cd(int argc, char** argv)
 {
-  if (chdir(argv[1]) == -1)
-    return -1;
-  else return 0;
+  errno = 0;
+
+  if (argv[1])
+  {
+    chdir(argv[1]);
+    
+    return errno ? errno : 0;
+  }
+  else return -1025;
 }
 
-void err_cd(int err_code)
+void err_cd(int err_code, char** argv)
 {
-  printf("error occured while changing directory\n");
+  switch (err_code)
+  {
+    case -1025:
+      fprintf(stderr, "cd: directory should be served as argument.\n");
+      break;
+
+    case ENOTDIR:
+      fprintf(stderr, "cd: not a directory: %s\n", argv[1]);
+      break;
+
+    case ENOENT:
+      fprintf(stderr, "cd: no such file or directory: %s\n", argv[1]);
+      break;
+
+    default:
+      fprintf(stderr, "cd: error while changing directory: %s\n", argv[1]);
+      break;
+  }
 }
