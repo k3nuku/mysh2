@@ -40,13 +40,15 @@ int main()
 
     struct command_entry* comm_entry = fetch_command(argv[0]);
 
-    if (comm_entry != NULL) {
+    if (comm_entry != NULL) { // pre-defined command in mysh
       int ret = comm_entry->command_func(argc, argv);
       if (ret != 0) {
-        comm_entry->err(ret);
+        comm_entry->err(ret, argv);
       }
-    } else if (does_exefile_exists(argv[0])) {
+    } else if (does_exefile_exists(argv[0])) { // check whether it is executable binary then execute
       // TODO: Execute the program of argv[0].
+      printf("exefile exists\n");
+
     } else {
       assert(comm_entry == NULL);
       fprintf(stderr, "%s: command not found.\n", argv[0]);
