@@ -63,23 +63,20 @@ void parse_command(const char* input,
   {
     if (token[0] == '\"')
     {
-      char* temp;
       char temp_dquoted[1024];
 
       strcat(temp_dquoted, token + 1);
       strcat(temp_dquoted, " ");
 
-      if (!(temp = strtok(NULL, "\"")))
+      if ((token = strtok(NULL, "\"")) == NULL)
       {
         temp_argc = -1;
 
         break;
       }
 
-      strcat(temp_dquoted, temp);
+      strcat(temp_dquoted, token);
       temp_argc = add_string_to_array(temp_argc, &temp_argv, temp_dquoted);
-
-      free(temp_dquoted);
     }
     else temp_argc = add_string_to_array(temp_argc, &temp_argv, token);
 
