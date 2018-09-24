@@ -20,9 +20,10 @@
 /*
  *  Function    : add_string_to_array
  *  Description : Add string into array. If array is not initialized, then initialize and add string.
- *  Argument    : [darray] as 2-stack pointer of char (string array)
-                  [string] as string
- *  Return      : length of string array as int
+ *  Argument    : [count_of_length] as integer
+ *                [darray] as 2-stack pointer of char (string array)
+ *                [string] as string
+ *  Return      : Added row count. If succeeded then returns 1 as output.
  *                + affected string array as [darray] in input parameter
  */
 int add_string_to_array(int count_of_length, char*** darray, char* string)
