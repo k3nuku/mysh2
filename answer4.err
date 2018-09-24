@@ -1,1 +1,2 @@
+cd: not a directory: /bin/ls
 cd: no such file or directory: /never-never-exist

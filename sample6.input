@@ -1,3 +1,4 @@
+rm -rf /tmp/ajou
 mkdir /tmp/ajou
 touch /tmp/ajou/a
 touch /tmp/ajou/b
