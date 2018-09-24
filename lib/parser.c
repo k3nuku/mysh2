@@ -78,13 +78,15 @@ void parse_command(const char* input,
 
       strcat(temp_dquoted, temp);
       temp_argc = add_string_to_array(temp_argc, &temp_argv, temp_dquoted);
+
+      free(temp_dquoted);
     }
     else temp_argc = add_string_to_array(temp_argc, &temp_argv, token);
 
     token = strtok(NULL, " ");
   }
 
-  if (temp_argc > -1) // 정상이면
+  if (temp_argc > -1)
   {
     free(token);
 
@@ -93,7 +95,6 @@ void parse_command(const char* input,
 
     *argv = temp_argv;
   }
-  else free(argv); // 에러나면
 
   *argc = temp_argc;
 }
