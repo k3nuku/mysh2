@@ -12,7 +12,10 @@
  *
  *********************************************************************/
 #include "commands.h"
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 static struct command_entry commands[] =
 {
@@ -30,31 +33,50 @@ static struct command_entry commands[] =
 
 struct command_entry* fetch_command(const char* command_name)
 {
-  // TODO: Fill it.
+  struct command_entry* ret_entry;
 
-  return NULL;
+  ret_entry = (struct command_entry*)malloc(sizeof(struct command_entry*));
+  ret_entry->command_name = command_name;
+  
+  if (strcmp(ret_entry->command_name, "pwd") == 0)
+  {
+    ret_entry->command_func = &do_pwd;
+    ret_entry->err = &err_pwd;
+  }
+  else if (strcmp(command_name, "cd") == 0)
+  {
+    ret_entry->command_func = &do_cd;
+    ret_entry->err = &err_cd;
+  }
+  else return NULL;
+
+  return ret_entry;
 }
 
 int do_pwd(int argc, char** argv)
 {
-  // TODO: Fill it.
+  char path[1024];
 
-  return -1;
+  if (getcwd(path, 1024) == NULL)
+    return -1;
+  else printf("%s\n", path);
+
+  return 0;
 }
 
 void err_pwd(int err_code)
 {
-  // TODO: Fill it.
+  printf("error occured while printing working directory\n");
 }
 
 int do_cd(int argc, char** argv)
 {
-  // TODO: Fill it.
-
-  return -1;
+  if (chdir(argv[1]) == -1)
+    return -1;
+  else return 0;
 }
 
 void err_cd(int err_code)
 {
-  // TODO: Fill it.
+  printf("error occured while changing directory\n");
 }
