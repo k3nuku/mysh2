@@ -50,13 +50,12 @@ int add_string_to_array(int count_of_length, char*** darray, char* string)
 void parse_command(const char* input,
                    int* argc, char*** argv)
 {
-  char* token;
   char** temp_argv = NULL;
   int temp_argc = 0;
 
-  token = (char*)calloc(strlen(input) + 1, sizeof(char*));
-  strcpy(token, input);
-  
+  char* token = strdup(input);
+  char* begin_of_the_token = token;
+
   token = strtok(token, " ");
  
   while (token != NULL)
@@ -83,9 +82,10 @@ void parse_command(const char* input,
     token = strtok(NULL, " ");
   }
 
+  free(begin_of_the_token);
+
   if (temp_argc > -1)
   {
-    free(token);
 
     if (temp_argv[temp_argc - 1][strlen(temp_argv[temp_argc - 1]) - 1] == '\n')
       temp_argv[temp_argc - 1][strlen(temp_argv[temp_argc - 1]) - 1] = '\0';
