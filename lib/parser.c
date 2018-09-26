@@ -53,10 +53,9 @@ void parse_command(const char* input,
   char** temp_argv = NULL;
   int temp_argc = 0;
 
-  //char* token = strdup(input);
   char* token = (char*)calloc(strlen(input) + 1, sizeof(char));
-  strcpy(token, input)
-  
+  strcpy(token, input);
+
   char* begin_of_the_token = token;
 
   token = strtok(token, " ");
