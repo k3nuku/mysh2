@@ -59,7 +59,7 @@ int do_pwd(int argc, char** argv)
 
 void err_pwd(int err_code, char** argv)
 {
-  printf("error occured while printing working directory\n");
+  printf("pwd: error occured while printing working directory.\n");
 }
 
 int do_cd(int argc, char** argv)
