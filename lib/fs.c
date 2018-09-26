@@ -13,8 +13,17 @@
  *********************************************************************/
 #include "fs.h"
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+
 int does_exefile_exists(const char* path)
 {
-  // TODO: Fill it!
-  return -1;
+  struct stat stat_res;
+
+  if (!stat(path, &stat_res) && !S_ISDIR(stat_res.st_mode))
+    return 1;
+  else return 0;
 }
