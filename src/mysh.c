@@ -19,12 +19,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-
 #include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 int main()
 {
   char command_buffer[4096] = { 0, };
+  int child_status;
 
   while (fgets(command_buffer, 4096, stdin) != NULL) {
     int argc = -1;
@@ -46,9 +48,26 @@ int main()
         comm_entry->err(ret, argv);
       }
     } else if (does_exefile_exists(argv[0])) { // check whether it is executable binary then execute
-      // TODO: Execute the program of argv[0].
-      printf("exefile exists\n");
+      pid_t _pid;
+      _pid = fork();
 
+      switch (_pid)
+      {
+        case 0:
+          execvp(argv[0], argv);
+          
+          printf("something went wrong. child is going exit.\n");
+          exit(0);
+
+          break;
+
+        default:
+          if (_pid > 0)
+            waitpid(-1, &child_status, 0);
+          else printf("fork failed\n");
+
+          break;
+      }
     } else {
       assert(comm_entry == NULL);
       fprintf(stderr, "%s: command not found.\n", argv[0]);
