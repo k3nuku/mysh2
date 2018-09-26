@@ -17,7 +17,7 @@
 #define MAX_DIR_LENGTH 1024
 
 typedef int (*command_t)(int, char**);
-typedef void (*command_error_handler)(int, char**);
+typedef void (*command_error_handler)(int);
 
 struct command_entry
 {
@@ -29,9 +29,9 @@ struct command_entry
 struct command_entry* fetch_command(const char* command_name);
 
 int do_pwd(int argc, char** argv);
-void err_pwd(int err_code, char** argv);
+void err_pwd(int err_code);
 
 int do_cd(int argc, char** argv);
-void err_cd(int err_code, char** argv);
+void err_cd(int err_code);
 
 #endif // COMMANDS_H_

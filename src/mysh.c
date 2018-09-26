@@ -46,7 +46,7 @@ int main()
     if (comm_entry != NULL) { // pre-defined command in mysh
       int ret = comm_entry->command_func(argc, argv);
       if (ret != 0) {
-        comm_entry->err(ret, argv);
+        comm_entry->err(ret);
       }
     } else if (does_exefile_exists(argv[0])) { // check whether it is executable binary then execute
       pid_t _pid;

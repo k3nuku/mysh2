@@ -57,7 +57,7 @@ int do_pwd(int argc, char** argv)
   return errno ? errno : 0;
 }
 
-void err_pwd(int err_code, char** argv)
+void err_pwd(int err_code)
 {
   printf("pwd: error occured while printing working directory.\n");
 }
@@ -75,7 +75,7 @@ int do_cd(int argc, char** argv)
   else return -1025;
 }
 
-void err_cd(int err_code, char** argv)
+void err_cd(int err_code)
 {
   switch (err_code)
   {
@@ -84,15 +84,15 @@ void err_cd(int err_code, char** argv)
       break;
 
     case ENOTDIR:
-      fprintf(stderr, "cd: not a directory: %s\n", argv[1]);
+      fprintf(stderr, "cd: not a directory\n");
       break;
 
     case ENOENT:
-      fprintf(stderr, "cd: no such file or directory: %s\n", argv[1]);
+      fprintf(stderr, "cd: no such file or directory\n");
       break;
 
     default:
-      fprintf(stderr, "cd: error while changing directory: %s\n", argv[1]);
+      fprintf(stderr, "cd: error while changing directory\n");
       break;
   }
 }
