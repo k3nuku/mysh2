@@ -14,6 +14,8 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
+#define MAX_DIR_LENGTH 1024
+
 #include <stdlib.h>
 
 #define FREE_2D_ARRAY(n, arr) \

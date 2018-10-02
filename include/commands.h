@@ -14,8 +14,6 @@
 #ifndef COMMANDS_H_
 #define COMMANDS_H_
 
-#define MAX_DIR_LENGTH 1024
-
 typedef int (*command_t)(int, char**);
 typedef void (*command_error_handler)(int);
 

@@ -16,4 +16,6 @@
 
 int does_exefile_exists(const char* path);
 
+int check_file_executable(const char* path);
+
 #endif // FS_H_
