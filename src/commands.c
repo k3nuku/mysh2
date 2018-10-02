@@ -12,6 +12,8 @@
  *
  *********************************************************************/
 #include "commands.h"
+#include "utils.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -59,7 +61,24 @@ int do_pwd(int argc, char** argv)
 
 void err_pwd(int err_code)
 {
-  printf("pwd: error occured while printing working directory.\n");
+  switch (err_code)
+  {
+    case EACCES:
+      printf("pwd: you don't have permission to display current directory\n");
+      break;
+
+    case EFAULT:
+      printf("pwd: \n");
+      break;
+
+    case EINVAL:
+      printf("pwd: \n");
+      break;
+
+    default:
+      printf("pwd: an unknown error occured while printing current working directory\n");
+      break;
+  }
 }
 
 int do_cd(int argc, char** argv)
@@ -80,7 +99,7 @@ void err_cd(int err_code)
   switch (err_code)
   {
     case -1025:
-      fprintf(stderr, "cd: directory should be served as argument.\n");
+      fprintf(stderr, "cd: directory should be served as argument\n");
       break;
 
     case ENOTDIR:
@@ -92,7 +111,7 @@ void err_cd(int err_code)
       break;
 
     default:
-      fprintf(stderr, "cd: error while changing directory\n");
+      fprintf(stderr, "cd: an error occured while changing directory\n");
       break;
   }
 }
