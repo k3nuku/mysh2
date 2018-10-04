@@ -37,7 +37,7 @@ int add_string_to_array(int count_of_length, char*** darray, char* string)
   }
 
   array = (char**)realloc(array, (count_of_length + 2) * sizeof(char*));
-  array[count_of_length] = (char*)calloc(strlen(string) + 1, sizeof(char*));
+  array[count_of_length] = (char*)calloc(strlen(string) + 1, sizeof(char));
 
   strcpy(array[count_of_length], string);
 
