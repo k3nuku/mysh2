@@ -21,10 +21,10 @@ func_test:
 	./mysh < sample4.input > your_answer4.txt 2> your_answer4.err
 	diff your_answer4.txt answer4.txt >> scoring.txt
 	diff your_answer4.err answer4.err >> scoring.txt
-	./mysh < sample5.input > your_answer5.txt
+	stdbuf -o0 ./mysh < sample5.input > your_answer5.txt
 	diff your_answer5.txt answer5.txt >> scoring.txt
-	./mysh < sample6.input > your_answer6.txt
+	stdbuf -o0 ./mysh < sample6.input > your_answer6.txt
 	diff your_answer6.txt answer6.txt >> scoring.txt
-	./mysh < sample7.input > your_answer7.txt 2> your_answer7.err
+	stdbuf -o0 ./mysh < sample7.input > your_answer7.txt 2> your_answer7.err
 	diff your_answer7.txt answer7.txt >> scoring.txt
 	diff your_answer7.err answer7.err >> scoring.txt
