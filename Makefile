@@ -1,11 +1,14 @@
 CC=gcc -std=c99
+LIB=-lpthread
 
 all:
 	$(CC) -o mysh ./src/mysh.c ./src/commands.c \
-		./lib/parser.c ./lib/fs.c -I./include
+		./lib/parser.c ./lib/fs.c -I./include \
+		$(LIB)
 
 unit_test:
-	$(CC) -o unit_test ./lib/parser.c ./tests/parser_test.c -I./include
+	$(CC) -o unit_test ./lib/parser.c ./tests/parser_test.c\
+		-I./include $(LIB)
 	./unit_test
 
 func_test:
