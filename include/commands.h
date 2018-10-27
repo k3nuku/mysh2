@@ -32,4 +32,10 @@ void err_pwd(int err_code);
 int do_cd(int argc, char** argv);
 void err_cd(int err_code);
 
+int do_fg(int argc, char** argv);
+void err_fg(int err_code);
+
+int do_kill(int argc, char** argv);
+void err_kill(int err_code);
+
 #endif // COMMANDS_H_

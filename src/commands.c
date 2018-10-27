@@ -36,6 +36,11 @@ static struct command_entry commands[] =
     "fg",
     do_fg,
     err_fg
+  },
+  {
+    "kill",
+    do_kill,
+    err_kill
   }
 };
 
@@ -127,6 +132,16 @@ int do_fg(int argc, char** argv)
 }
 
 void err_fg(int err_code)
+{
+  
+}
+
+int do_kill(int argc, char** argv)
+{
+  return -1;
+}
+
+void err_kill(int err_code)
 {
   
 }
