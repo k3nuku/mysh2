@@ -61,7 +61,7 @@ int resolve_path(const char* path, char** pathout)
   if (retval)
   {
     if (pathout)
-      pathout = &retval;
+      *pathout = retval;
     else
       free(retval);
 
