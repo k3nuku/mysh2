@@ -52,6 +52,10 @@ struct command_entry* fetch_command(const char* command_name)
     ret_entry = &commands[0];
   else if (strcmp(command_name, "cd") == 0)
     ret_entry = &commands[1];
+  else if (strcmp(command_name, "fg") == 0)
+    ret_entry = &commands[2];
+  else if (strcmp(command_name, "kill") == 0)
+    ret_entry = &commands[3];
   else return NULL;
   
   return ret_entry;
