@@ -14,6 +14,8 @@
 #ifndef FS_H_
 #define FS_H_
 
+int resolve_path(const char* path, char** pathout);
+
 int does_exefile_exists(const char* path);
 
 int check_file_executable(const char* path);

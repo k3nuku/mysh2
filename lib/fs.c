@@ -22,43 +22,61 @@
 #include <errno.h>
 #include <string.h>
 
+int resolve_path(const char* path, char** pathout)
+{
+  const char* system_path = getenv("PATH");
+  char* path_token = (char*)calloc(strlen(system_path) + 1, sizeof(char));
+  char* begin_of_path_token = path_token;
+
+  char* retval = NULL;
+
+  path_token = strcpy(path_token, system_path);    
+  path_token = strtok(path_token, ":");
+
+  while (path_token != NULL)
+  {
+    char* temp_pathres = (char*)calloc(MAX_DIR_LENGTH, sizeof(char));
+
+    strcat(temp_pathres, path_token);
+    strcat(temp_pathres, "/");
+    strcat(temp_pathres, path);
+
+    if (check_file_executable(temp_pathres))
+    {
+      retval = (char*)calloc(strlen(temp_pathres) + 1, sizeof(char));
+      strcpy(retval, temp_pathres);
+
+      free(temp_pathres);
+
+      break;
+    }
+
+    free(temp_pathres);
+
+    path_token = strtok(NULL, ":");
+  }
+
+  free(begin_of_path_token);
+
+  if (retval)
+  {
+    if (pathout)
+      pathout = &retval;
+    else
+      free(retval);
+
+    return 1;
+  }
+  else return 0;
+}
+
 int does_exefile_exists(const char* path)
 {
   struct stat stat_res;
   int found = 0;
 
   if (!(found = check_file_executable(path)))
-  {
-    const char* system_path = getenv("PATH");
-    char* path_token = (char*)calloc(strlen(system_path) + 1, sizeof(char));
-    char* begin_of_path_token = path_token;
-
-    path_token = strcpy(path_token, system_path);    
-  	path_token = strtok(path_token, ":");
-
-  	while (path_token != NULL)
-  	{
-      char* temp_pathres = (char*)calloc(MAX_DIR_LENGTH, sizeof(char));
-
-      strcat(temp_pathres, path_token);
-      strcat(temp_pathres, "/");
-      strcat(temp_pathres, path);
-
-      if (check_file_executable(temp_pathres))
-      {
-        found = 1;
-        free(temp_pathres);
-
-        break;
-      }
-
-      free(temp_pathres);
-
-  		path_token = strtok(NULL, ":");
-  	}
-
-    free(begin_of_path_token);
-  }
+    found = resolve_path(path, NULL);
 
   return found ? 1 : 0;
 }
