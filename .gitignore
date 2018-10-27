@@ -3,5 +3,6 @@ unit_test
 
 your_answer*
 *.swp
+.tags*
 
 .DS_Store
