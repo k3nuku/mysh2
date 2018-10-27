@@ -31,6 +31,11 @@ static struct command_entry commands[] =
     "cd",
     do_cd,
     err_cd
+  },
+  {
+    "fg",
+    do_fg,
+    err_fg
   }
 };
 
@@ -114,4 +119,14 @@ void err_cd(int err_code)
       fprintf(stderr, "cd: an error occured while changing directory\n");
       break;
   }
+}
+
+int do_fg(int argc, char** argv)
+{
+  return -1;
+}
+
+void err_fg(int err_code)
+{
+  
 }
