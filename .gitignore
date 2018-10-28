@@ -4,5 +4,6 @@ unit_test
 your_answer*
 *.swp
 .tags*
+*.dSYM
 
 .DS_Store
