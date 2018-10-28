@@ -49,25 +49,34 @@ int main()
         comm_entry->err(ret);
       }
     } else if (does_exefile_exists(argv[0])) { // check whether it is executable binary then execute
-      pid_t _pid;
-      _pid = fork();
-
-      switch (_pid)
+      // check whether program should be ran over background
+      if (parse_is_background(argv)) // background process
       {
-        case 0:
-          execvp(argv[0], argv);
-          
-          printf("something went wrong. child is going exit.\n");
-          exit(0);
+        // processing background task with pthread library
+        printf("bgtest success");
+      }
+      else // normal foreground process
+      {
+        pid_t _pid;
+        _pid = fork();
 
-          break;
+        switch (_pid)
+        {
+          case 0:
+            execvp(argv[0], argv);
+            
+            printf("something went wrong. child is going exit.\n");
+            exit(0);
 
-        default:
-          if (_pid > 0)
-            waitpid(-1, &child_status, 0);
-          else printf("fork failed\n");
+            break;
 
-          break;
+          default:
+            if (_pid > 0)
+              waitpid(-1, &child_status, 0);
+            else printf("fork failed\n");
+
+            break;
+        }
       }
     } else {
       assert(comm_entry == NULL);

@@ -17,5 +17,7 @@
 void parse_command(const char* input,
                    int* argc, char*** argv);
 
+int parse_is_background(char** argv);
+
 #endif // PARSER_H_
 

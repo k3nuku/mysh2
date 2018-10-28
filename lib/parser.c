@@ -97,3 +97,21 @@ void parse_command(const char* input,
 
   *argc = temp_argc;
 }
+
+int parse_is_background(char** argv)
+{
+  int argv_count = -1;
+
+  for (int i = 0; ; i++)
+  {
+    if (argv[i] == NULL)
+    {
+      argv_count = i;
+      break;
+    }
+  }
+
+  char* lastargv = argv[argv_count - 1];
+
+  return strcmp(lastargv, "&") == 0 ? 1 : 0;
+}
