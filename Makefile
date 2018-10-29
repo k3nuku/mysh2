@@ -3,8 +3,8 @@ LIB=-lpthread
 
 all:
 	$(CC) -o mysh ./src/mysh.c ./src/commands.c \
-		./lib/parser.c ./lib/fs.c -I./include \
-		$(LIB)
+		./lib/parser.c ./lib/fs.c ./src/signalh.c \
+		-I./include $(LIB)
 
 unit_test:
 	$(CC) -o unit_test ./lib/parser.c ./tests/parser_test.c\

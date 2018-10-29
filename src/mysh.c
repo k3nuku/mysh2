@@ -13,6 +13,7 @@
  *********************************************************************/
 #include "commands.h"
 #include "parser.h"
+#include "signalh.h"
 #include "utils.h"
 #include "fs.h"
 
@@ -26,6 +27,8 @@
 
 int main()
 {
+  signal_setup();
+
   char command_buffer[4096] = { 0, };
   int child_status;
 
@@ -54,6 +57,8 @@ int main()
       {
         // processing background task with pthread library
         printf("bgtest success");
+
+
       }
       else // normal foreground process
       {
