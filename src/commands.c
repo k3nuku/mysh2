@@ -12,6 +12,7 @@
  *
  *********************************************************************/
 #include "commands.h"
+#include "signalh.h"
 #include "utils.h"
 
 #include <stdio.h>
@@ -64,27 +65,29 @@ struct command_entry* fetch_command(const char* command_name)
 int execute_command(char** argv)
 {
   int child_status;
+  int retval = 1;
 
   pid_t _pid;
   _pid = fork();
 
   switch (_pid)
   {
-  case 0:
-    execvp(argv[0], argv);
-    
-    printf("something went wrong. child is going exit.\n");
-    exit(0);
+    case 0:
+      execvp(argv[0], argv);
+      retval = 0;
+      break;
 
-    break;
-
-  default:
-    if (_pid > 0)
-      waitpid(-1, &child_status, 0);
-    else printf("fork failed\n");
+    default:
+      if (_pid > 0)
+        waitpid(-1, &child_status, 0);
+      else
+      {
+        printf("fork failed\n");
+        retval = 0;
+      }
   }
 
-  return 0;
+  return retval;
 }
 
 int do_pwd(int argc, char** argv)
@@ -116,7 +119,7 @@ void err_pwd(int err_code)
       break;
 
     default:
-      printf("pwd: an unknown error occured while printing current working directory\n");
+      printf("pwd: an unknown error has been occured while printing current working directory\n");
       break;
   }
 }
@@ -151,7 +154,7 @@ void err_cd(int err_code)
       break;
 
     default:
-      fprintf(stderr, "cd: an error occured while changing directory\n");
+      fprintf(stderr, "cd: an unknown error has been occured while changing directory\n");
       break;
   }
 }
@@ -168,10 +171,33 @@ void err_fg(int err_code)
 
 int do_kill(int argc, char** argv)
 {
-  return -1;
+  if (argv[1])
+  {
+    int ret = kill_pid(atoi(argv[1]));
+
+    return ret ? ret : 0;
+  }
+  else return -1025;
 }
 
 void err_kill(int err_code)
 {
-  
+  switch (err_code)
+  {
+    case -1025:
+      fprintf(stderr, "kill: pid should be served as argument\n");
+      break;
+
+    case EINVAL:
+      fprintf(stderr, "kill: wrong signal has been provided\n");
+      break;
+
+    case ENOBUFS:
+      fprintf(stderr, "kill: not enough resource\n");
+      break;
+
+    default:
+      fprintf(stderr, "kill: an unknown error has been occured while kill process\n");
+      break;
+  }
 }

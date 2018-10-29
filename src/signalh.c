@@ -1,9 +1,9 @@
 #include "signalh.h"
 
 #include <stdio.h>
-#include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
+#include <errno.h>
 
 void signal_setup()
 {
@@ -23,9 +23,16 @@ void catch_sigstp()
   signal(SIGTSTP, (void *)sighandle_callback);
 }
 
-int kill(pid_t pid, int signal)
+int kill_pid(pid_t pid)
 {
-  return kill(pid, signal) > 0 ? 1 : 0;
+  return send_signal(pid, SIGKILL);
+}
+
+int send_signal(pid_t pid, int signal)
+{
+  if (kill(pid, signal) != 0)
+    return errno;
+  else return 1;
 }
 
 void sighandle_callback(int signal)
