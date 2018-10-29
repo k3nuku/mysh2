@@ -98,20 +98,33 @@ void parse_command(const char* input,
   *argc = temp_argc;
 }
 
-int parse_is_background(char** argv)
+// wanna remove "&" string, provide argc to this function as parameter at function call
+int parse_is_background(char** argv, int* argc)
 {
-  int argv_count = -1;
+  int is_bgcomm = 0;
 
-  for (int i = 0; ; i++)
+  if (*argc > 0)
   {
-    if (argv[i] == NULL)
+    if (strcmp(argv[*argc - 1], "&") == 0)
     {
-      argv_count = i;
-      break;
+      is_bgcomm = 1;
+
+      free(argv[*argc - 1]);
+
+      argv[*argc - 1] = argv[*argc];
+      *argc = *argc - 1;
     }
   }
+  else
+  {
+    int argv_count = 0;
 
-  char* lastargv = argv[argv_count - 1];
+    while (argv[argv_count] != NULL)
+      argv_count++;
 
-  return strcmp(lastargv, "&") == 0 ? 1 : 0;
+    if (strcmp(argv[argv_count - 1], "&") == 0)
+      is_bgcomm = 1;
+  }
+
+  return is_bgcomm;
 }

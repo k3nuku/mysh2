@@ -53,7 +53,7 @@ int main()
       }
     } else if (does_exefile_exists(argv[0])) { // check whether it is executable binary then execute
       // check whether program should be ran over background
-      if (parse_is_background(argv)) // background process
+      if (parse_is_background(argv, &argc)) // background process
       {
         // processing background task with pthread library
         printf("bgtest success");
