@@ -36,6 +36,9 @@ int main()
     int argc = -1;
     char** argv = NULL;
 
+    if (command_buffer[0] == '\n')
+      continue;
+
     parse_command(command_buffer, &argc, &argv);
 
     assert(argv != NULL);
