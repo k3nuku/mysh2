@@ -14,6 +14,7 @@
 #include "commands.h"
 #include "parser.h"
 #include "signalh.h"
+#include "threading.h"
 #include "utils.h"
 #include "fs.h"
 
@@ -30,7 +31,6 @@ int main()
   signal_setup();
 
   char command_buffer[4096] = { 0, };
-  int child_status;
 
   while (fgets(command_buffer, 4096, stdin) != NULL) {
     int argc = -1;
@@ -55,16 +55,26 @@ int main()
         comm_entry->err(ret);
       }
     } else if (does_exefile_exists(argv[0])) { // check whether it is executable binary then execute
-      // check whether program should be ran over background
-      if (parse_is_background(argv, &argc)) // background process
+      if (parse_is_background(argv, &argc)) // check whether program should be ran over background
       {
-        // processing background task with pthread library
-        printf("bgtest success");
-
-        
+        int ret = process_bgcommand(argv);
+        if (ret != 0) // processing background task with pthread library
+        {
+          // [1] 19919; [bgtaskid] threadid;
+          printf("[%d] %d\n", 1, 19919);
+        }
+        else
+          fprintf(stderr, "unexpected error has occured while executing background process.\n");
       }
-      else // normal foreground process
-        execute_command(argv);
+      else // normal foreground process 
+      {
+        if (!execute_command(argv))
+        {
+          fprintf(stderr, "unexpected error has occured while executing command.\nmysh now exit.\n");
+
+          return -1;
+        }
+      }
     } else {
       assert(comm_entry == NULL);
       fprintf(stderr, "%s: command not found.\n", argv[0]);
