@@ -173,7 +173,12 @@ int do_kill(int argc, char** argv)
 {
   if (argv[1])
   {
-    int ret = kill_pid(atoi(argv[1]));
+    int pid = atoi(argv[1]);
+
+    if (pid < 1)
+      return -1026;
+
+    int ret = kill_pid(pid);
 
     return ret ? ret : 0;
   }
@@ -186,6 +191,10 @@ void err_kill(int err_code)
   {
     case -1025:
       fprintf(stderr, "kill: pid should be served as argument\n");
+      break;
+
+    case -1026:
+      fprintf(stderr, "kill: wrong pid value provided\n");
       break;
 
     case EINVAL:
