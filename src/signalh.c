@@ -1,9 +1,12 @@
 #include "signalh.h"
+#include "utils.h"
 
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/types.h> 
+#include <sys/wait.h>
 
 void signal_setup()
 {
@@ -34,21 +37,49 @@ int send_signal(pid_t pid, int signal)
     return errno;
   else return 1;
 }
-
+ 
+// signal handler for parent(main) process
 void sighandle_callback(int signal)
 {
   switch (signal)
   {
-    case SIGINT:
-      printf("got sigint\n");
+    case SIGINT: // ignoring ctrl+c
       break;
 
-    case SIGTSTP:
-      // [1]  + 10910 suspended  wget https://git.kernel.org/torvalds/t/linux-4.19-rc7.tar.gz
-      printf("got sigstp\n");
+    case SIGTSTP: // ignoring ctrl+z
       break;
     
-    default:
-      printf("other signal received\n");
+    default: // or send signal normally
+      send_signal(getpid(), signal);
   }
+}
+
+void sighandler_bg(int pid, char** command, int child_status)
+{
+  if (WIFEXITED(child_status))
+  {
+    printf("[%d]  + %d done\t", 1, pid);
+  }
+  else if (WCOREDUMP(child_status))
+  {
+    printf("[%d]  + %d core dumped\t", 1, pid);
+  }
+  else if (WIFSTOPPED(child_status))
+  {
+    printf("[%d]  + %d suspended\t", 1, pid);
+  }
+  else if (WIFSIGNALED(child_status))
+  {
+    if (child_status == 11)
+      printf("[%d]  + %d Segmentation fault\t", 1, pid);
+    else printf("[%d]  + %d signaled\t", 1, pid);
+  }
+  else printf("[%d]  + %d not_supported_signaled\t", 1, pid);
+
+  int i = 0;
+
+  while (command[i] != NULL)
+    printf("%s ", command[i++]);
+ 
+  printf("\n");
 }
