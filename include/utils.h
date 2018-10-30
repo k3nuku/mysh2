@@ -24,4 +24,7 @@
   }\
   free((arr));
 
+void argvdup(char** argv, char*** out_argv);
+void free_argv(char** argv);
+
 #endif // UTILS_H_
