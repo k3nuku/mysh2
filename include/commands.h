@@ -26,8 +26,6 @@ struct command_entry
 
 struct command_entry* fetch_command(const char* command_name);
 
-int execute_command(char** argv);
-
 int do_pwd(int argc, char** argv);
 void err_pwd(int err_code);
 

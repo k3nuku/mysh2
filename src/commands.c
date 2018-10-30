@@ -62,34 +62,6 @@ struct command_entry* fetch_command(const char* command_name)
   return ret_entry;
 }
 
-int execute_command(char** argv)
-{
-  int child_status;
-  int retval = 1;
-
-  pid_t _pid;
-  _pid = fork();
-
-  switch (_pid)
-  {
-    case 0:
-      execvp(argv[0], argv);
-      retval = 0;
-      break;
-
-    default:
-      if (_pid > 0)
-        waitpid(-1, &child_status, 0);
-      else
-      {
-        printf("fork failed\n");
-        retval = 0;
-      }
-  }
-
-  return retval;
-}
-
 int do_pwd(int argc, char** argv)
 {
   errno = 0;
@@ -180,7 +152,7 @@ int do_kill(int argc, char** argv)
 
     int ret = kill_pid(pid);
 
-    return ret ? ret : 0;
+    return ret ? 0 : ret;
   }
   else return -1025;
 }

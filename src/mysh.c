@@ -21,10 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 int main()
 {
@@ -57,18 +53,12 @@ int main()
     } else if (does_exefile_exists(argv[0])) { // check whether it is executable binary then execute
       if (parse_is_background(argv, &argc)) // check whether program should be ran over background
       {
-        int ret = process_bgcommand(argv);
-        if (ret != 0) // processing background task with pthread library
-        {
-          // [1] 19919; [bgtaskid] threadid;
-          printf("[%d] %d\n", 1, 19919);
-        }
-        else
+        if (!process_bgcommand(argv)) // processing background task with pthread library
           fprintf(stderr, "unexpected error has occured while executing background process.\n");
       }
       else // normal foreground process 
       {
-        if (!execute_command(argv))
+        if (!process_fgcommand(argv, 0))
         {
           fprintf(stderr, "unexpected error has occured while executing command.\nmysh now exit.\n");
 
