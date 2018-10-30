@@ -1,12 +1,11 @@
 CC=gcc -std=c99
 LIB=-lpthread
-ATTR=-fdeclspec
 
 all:
 	$(CC) -o mysh ./src/mysh.c ./src/commands.c \
 		./lib/parser.c ./lib/fs.c ./src/signalh.c \
 		./lib/threading.c ./lib/socketpair.c \
-		-I./include $(LIB) $(ATTR)
+		./lib/utils.c -I./include $(LIB)
 
 unit_test:
 	$(CC) -o unit_test ./lib/parser.c ./tests/parser_test.c\
