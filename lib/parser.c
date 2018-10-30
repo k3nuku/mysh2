@@ -103,7 +103,7 @@ int parse_is_background(char** argv, int* argc)
 {
   int is_bgcomm = 0;
 
-  if (*argc > 0)
+  if (argc && *argc > 0)
   {
     if (strcmp(argv[*argc - 1], "&") == 0)
     {
