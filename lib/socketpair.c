@@ -31,8 +31,6 @@ int* create_unix_socketpair()
       retpair[0] = retval_srv >> 16;
       retpair[1] = retval_srv & 0xFFFF;
       retpair[2] = retval_cli;
-
-      printf("sock srv_s: %d, srv_c: %d, cli_c: %d\n", retpair[0], retpair[1], retpair[2]);
     }
     else fprintf(stderr, "failed to create serverside socket pthread\n");  
   }
