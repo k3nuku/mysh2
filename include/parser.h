@@ -17,7 +17,10 @@
 void parse_command(const char* input,
                    int* argc, char*** argv);
 
+int add_string_to_array(int count_of_length, char*** darray, char* string);
+
 int parse_is_background(char** argv, int* argc);
+int parse_has_pipelining(char** argv, int argc);
 
 #endif // PARSER_H_
 
