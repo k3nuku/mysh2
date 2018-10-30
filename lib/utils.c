@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "parser.h"
 
 #include <string.h>
 
@@ -12,12 +13,7 @@ void argvdup(char** argv, char*** out_argv)
   char** argvd = (char**)calloc(count, sizeof(char*));
 
   for (int i = 0; i < count; i++)
-  {
-    argvd[i] = strdup(argv[i]);
-
-    if (i == count - 1)
-      argvd[i + 1] = NULL;
-  }
+    add_string_to_array(i, &argvd, argv[i]);
 
   *out_argv = argvd;
 }
