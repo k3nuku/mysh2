@@ -128,3 +128,19 @@ int parse_is_background(char** argv, int* argc)
 
   return is_bgcomm;
 }
+
+int parse_has_pipelining(char** argv, int argc)
+{
+  int ret = 0;
+
+  for (int i = 0; i < argc; i++)
+  {
+    if (strcmp(argv[i], "|") == 0)
+    {
+      ret = 1;
+      break;
+    }
+  }
+
+  return ret ? 1 : 0;
+}
