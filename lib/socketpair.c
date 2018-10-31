@@ -98,10 +98,24 @@ int create_client_unix_socketpair()
       break;
     }
 
-    usleep(10); // server should create socket in 10*CLIENT_SOCK_MAX_RETRIES seconds (def: 100ms)
+    usleep(10); // server should create socket in 10*CLIENT_SOCK_MAX_RETRIES milliseconds (def: 100ms)
   }
 
   return success ? c_socket_fd : -1;
+}
+
+int socketpair_receive(int socket_fd, int bufsize, char** out_data)
+{
+  char* buffer = (char*)calloc(bufsize + 1, sizeof(char));
+
+  *out_data = buffer;
+
+  return read(socket_fd, buffer, bufsize);
+}
+
+int socketpair_send(int socket_fd, const char* write_data)
+{
+  return send(socket_fd, write_data, strlen(write_data), 0);
 }
 
 int dispose_socketpair(int* socketpair)
