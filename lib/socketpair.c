@@ -9,9 +9,12 @@
 #include <sys/un.h>
 #include <errno.h>
 
-#define UNIXSOCK_PATH "/private/tmp/mysh.sock"
-#define BUFFER_SIZE 1024
+#define UNIXSOCK_NAME "/private/tmp/mysh"
+#define UNIXSOCK_EXT ".sock"
+
 #define CLIENT_SOCK_MAX_RETRIES 10
+
+static int sock_count = 0;
 
 int* create_unix_socketpair()
 {
@@ -21,7 +24,7 @@ int* create_unix_socketpair()
   if (run_pthread((void *)create_server_unix_socketpair, NULL, &pthread_srv))
   {
     if (run_pthread((void *)create_client_unix_socketpair, NULL, &pthread_cli))
-    {      
+    {
       int retval_cli = wait_pthread_finishes(&pthread_cli);
       int retval_srv = wait_pthread_finishes(&pthread_srv);
 
@@ -31,6 +34,9 @@ int* create_unix_socketpair()
       retpair[0] = retval_srv >> 16;
       retpair[1] = retval_srv & 0xFFFF;
       retpair[2] = retval_cli;
+
+      //printf("created pair%d sfd: %d, scfd: %d, ccfd: %d\n", sock_count + 1, retpair[0], retpair[1], retpair[2]);
+      sock_count++;
     }
     else fprintf(stderr, "failed to create serverside socket pthread\n");  
   }
@@ -50,14 +56,21 @@ int create_server_unix_socketpair()
 
   unsigned int c_addr_length = sizeof(c_addr);
 
-  if (access(UNIXSOCK_PATH, F_OK) == 0)
-    unlink(UNIXSOCK_PATH);
+  bzero(&s_addr, sizeof(s_addr));
+
+  char cnt_string[10];
+  sprintf(cnt_string, "%d", sock_count);
+
+  strcpy(s_addr.sun_path, UNIXSOCK_NAME);
+  strcat(s_addr.sun_path, cnt_string);
+  strcat(s_addr.sun_path, UNIXSOCK_EXT);
+
+  if (access(s_addr.sun_path, F_OK) == 0)
+    unlink(s_addr.sun_path);
 
   if ((s_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0)) > -1)
   {
-    bzero(&s_addr, sizeof(s_addr));
     s_addr.sun_family = AF_UNIX;
-    strcpy(s_addr.sun_path, UNIXSOCK_PATH);
 
     int stat = -1;
 
@@ -86,7 +99,13 @@ int create_client_unix_socketpair()
   struct sockaddr_un c_addr;
 
   c_addr.sun_family = AF_UNIX;
-  strcpy(c_addr.sun_path, UNIXSOCK_PATH);
+
+  char cnt_string[10];
+  sprintf(cnt_string, "%d", sock_count);
+
+  strcpy(c_addr.sun_path, UNIXSOCK_NAME);
+  strcat(c_addr.sun_path, cnt_string);
+  strcat(c_addr.sun_path, UNIXSOCK_EXT);
 
   c_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
