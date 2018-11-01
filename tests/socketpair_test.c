@@ -21,23 +21,23 @@ int main()
   // server -> client test
   state = socketpair_send(sc_socket, "testdatatoserver");
   assert(state > 0);
-  printf("[s-c] %d bytes sent\n", state);
+  printf("[s-c] server: %d bytes sent\n", state);
 
   char* buf;
 
   state = socketpair_receive(cc_socket, 1024, &buf);
   assert(state > 0);
-  printf("[s-c] %d bytes, received string %s\n", state, buf);
+  printf("[s-c] client: %d bytes, received string %s\n", state, buf);
   free(buf);
 
   // client -> server test
   state = socketpair_send(cc_socket, "testdatatoclient");
   assert(state > 0);
-  printf("[c-s] %d bytes sent\n", state);
+  printf("[c-s] client: %d bytes sent\n", state);
 
   state = socketpair_receive(sc_socket, 1024, &buf);
   assert(state > 0);
-  printf("[c-s] %d bytes, received string %s\n", state, buf);
+  printf("[c-s] server: %d bytes, received string %s\n", state, buf);
   free(buf);
 
   // closing test
