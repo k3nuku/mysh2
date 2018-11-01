@@ -69,12 +69,10 @@ int process_bgcommand(char** argv)
       // and redirects output to argv[0].pool_id.stdout in current directory
       if (run_pthread((void *)thread_bgcomm_execute, (void *)c_data, &thread) > -1)
       {
-        wait_pthread_finishes(&thread);
-        // child status? -> print it
+        // put pthread into threadpool
+        // but mysh implementation requires just one background process, no thread pool needed
 
-        //free(c_data[0]);
-        //free(c_data[1]);
-        //free(c_data);        
+        wait_pthread_finishes(&thread);
       }
       else fprintf(stderr, "failed to create pthread\n");
     }
@@ -106,14 +104,65 @@ int process_bgcommand(char** argv)
 
 int process_pipecommand(char** argv)
 {
-  // waiting to working pthread (blocking)
-  pthread_t thread;
-  pthread_attr_t thread_attr;
+  pid_t* pid;
+  int child_status;
+  char** argvdupd;
 
-  pthread_attr_init(&thread_attr);
-  pthread_create(&thread, &thread_attr, (void *)thread_bgcomm_execute, (void *)argv);
+  argvdup(argv, &argvdupd); // copy argv to another memory space
 
-  return 0;
+  // using forked process to waiting working pthread(client) (non-blocking, synchronous callback)
+  pid = (pid_t *)malloc(sizeof(pid_t));
+
+  // fork current process to wait background task
+  pid[0] = fork();
+
+  if (pid[0] == 0) // child (processing bgtask)
+  {
+    int* pair; // create socketpair made with unix socket
+
+    if ((pair = create_unix_socketpair()))
+    {
+      pthread_t thread;
+
+      // argv에 client socket reference 저장
+      void** c_data = (void **)calloc(2, sizeof(void *));
+      c_data[0] = (void *)(&pair[2]); // clientside-client socket
+      c_data[1] = (void *)argvdupd;
+
+      // run background process with pthread
+      if (run_pthread((void *)thread_bgcomm_execute, (void *)c_data, &thread) > -1)
+      {
+        // put pthread into threadpool
+        // but mysh implementation requires just one background process, no thread pool needed
+
+        wait_pthread_finishes(&thread);
+      }
+      else fprintf(stderr, "failed to create pthread\n");
+    }
+    else fprintf(stderr, "failed to create socketpair\n");
+
+    free_argv(argvdupd); // we need to free argvdupd twice because fork copies all of process memory
+
+    exit(0);
+  }
+  else if (pid[0] > 0) // parent
+  {
+    pthread_t thread;
+
+    void** c_data = (void **)calloc(2, sizeof(void *));
+    c_data[0] = (void *)pid;
+    c_data[1] = (void *)argvdupd;
+
+    printf("[%d] %d\n", 1, pid[0]); // print pid and do work normally
+    run_pthread((void *)thread_wait_child, (void *)c_data, &thread); // not to make a zombie proc
+  }
+  else
+  {
+    fprintf(stderr, "an unexpected error has occured while fork current process\n");
+    return 0;
+  }
+
+  return 1;
 }
 
 int process_fgcommand(char** argv, int argc)
@@ -126,64 +175,117 @@ int process_fgcommand(char** argv, int argc)
   }
   else
   {
-    if (!execute_command(argv)) // ordinary process it in foreground
+    if (!execute_command(argv, 0, NULL, NULL, -1)) // ordinary process it in foreground
       return 0;
     else return 1;  
   }
 }
 
+// how to process n-th pipe
+// using unix socket, produces server-client model each pipes
+// parse pipe delimiter(|) and pop commands from beginning of the argv on
+// each thread redirects stdout to socket, then close the connection
 int process_pipelining(char** argv, int argc)
 {
-  // how to process n-th pipe
-  // using unix socket, produces server-client model each pipes
-  // parse pipe delimiter(|) and pop commands from beginning of the argv on
-  // each thread redirects stdout to socket, then close the connection
-
+  int *pair, *last_pair;
   int head = 0;
+
+  //int back_stdout = dup(STDOUT_FILENO);
 
   while (argv[head] != NULL)
   {
-    int move = head;
-    int count = 0;
-
     char** argv_pipe = NULL;
+    head = parse_until_pipe_found(argv, &argv_pipe, head);
 
-    while (strcmp(argv[move], "|") != 0)
+    // if there is a next command then create new pipe
+    if (argv[head] != NULL)
     {
-      char* data = argv[head];
-
-      add_string_to_array(count, &argv_pipe, data);
-      
-      move++;
+      if ((pair = create_unix_socketpair()) < 0)
+      {
+        fprintf(stderr, "failed to create socketpair for pipelining\n");
+        return 0;
+      }
     }
 
-    // argv_pipe;
-    // using process_bgcommand to process 
-    
-    head = move + 1;
+    // execute command at argv_pipe
+    // redirect all stdout to provided client socket using dup2
+    //  : ex> cmd1 | cmd2 | cmd3 | cmd4;
+    //    parent(main)=close-stdout, redirect stdout to socket (stdout to child)
+    //    child(n-th-pipe)=close-stdin, redirect stdin/stdout to socket (stdout to next child or main)
+    //    printf("executing %s\n", argv_pipe[0]);
+    execute_command(argv_pipe, 1, &last_pair, pair,
+      argv[head] == NULL ? 1 : 0);
+
+    free_argv(argv_pipe); // dispose argv used at individual process pipelining
   }
 
-  return -1;
+  //dup2(back_stdout, STDOUT_FILENO)
+
+  return 1;
 }
 
-int execute_command(char** argv)
-{
+int execute_command(char** argv, int is_pipecomm, int** out_last_pair, int* pair, int last_command)
+{  
   int child_status;
   int retval = 1;
+
+  int* last_pair;
 
   pid_t _pid;
   _pid = fork();
 
+  if (is_pipecomm)
+    last_pair = *out_last_pair;
+
   switch (_pid)
   {
     case 0:
+      if (is_pipecomm)
+      {
+        if (last_pair) // middle command, last command
+        {
+          dup2(last_pair[1], STDIN_FILENO);
+          close(last_pair[1]);
+          close(last_pair[2]);
+        }
+        else // first command
+        {
+          close(pair[1]);
+          dup2(pair[2], STDOUT_FILENO);
+          close(pair[2]);
+        }
+
+        if (!last_command) // first command, middle command
+        {
+          close(pair[1]);
+          dup2(pair[2], STDOUT_FILENO);
+          close(pair[2]);
+        }
+      }
+
       execvp(argv[0], argv);
-      retval = 0;
+
+      fprintf(stderr, "exec failed\n");
+      retval = 0; // non-reachable code block
       break;
 
     default:
       if (_pid > 0)
+      {
+        if (is_pipecomm)
+        {
+          if (last_pair) // middle command, last command
+          {
+            close(last_pair[1]);
+            close(last_pair[2]);
+          }
+
+          if (!last_command) // first command, middle command
+            *out_last_pair = pair;
+        }
+        
         waitpid(-1, &child_status, 0);
+      }
       else
       {
         printf("fork failed\n");
@@ -202,17 +304,18 @@ void thread_bgcomm_execute(void* arg)
 
   // deserialize arg -> clientside_socket, argv
   void** args = (void **)arg;
-  int* c_fd = (int*)args[0]; // redirecting stdout to socket
+  int* c_fd = (int*)args[0]; // purpose of redirecting stdout to socket
   char** argv = (char**)args[1];
 
-  // executing command
-  execute_command(argv);
-}
-
-void thread_pipe_execute(void* arg)
-{
-  // setup unix socket for pipelining
-
+  // closing stdin/out
+  close(0);
+  close(1);
+  
+  if (dup2(*c_fd, 1) > 0)
+  {
+    execute_command(argv, 0, NULL, NULL, -1); // executing command
+  }
+  else fprintf(stderr, "an error has occured while redirect stdout to socket\n");
 }
 
 void thread_wait_child(void* arg)
