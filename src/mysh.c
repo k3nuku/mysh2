@@ -58,7 +58,7 @@ int main()
       }
       else // normal foreground process 
       {
-        if (!process_fgcommand(argv, 0))
+        if (!process_fgcommand(argv, argc))
         {
           fprintf(stderr, "unexpected error has occured while executing command.\nmysh now exit.\n");
 
