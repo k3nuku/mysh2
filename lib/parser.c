@@ -141,6 +141,24 @@ int parse_has_pipelining(char** argv, int argc)
       break;
     }
   }
-
+  
   return ret ? 1 : 0;
+}
+
+int parse_until_pipe_found(char** argv, char*** out_argv, int head)
+{
+  int count = 0;
+  int move = head;
+
+  while (1)
+  {
+    if (argv[move] == NULL)
+      return move;
+    else if (strcmp(argv[move], "|") == 0)
+      return move + 1; // pass pipe and break loop
+    else add_string_to_array(count, out_argv, argv[move]);
+    
+    move++;
+    count++;
+  }
 }

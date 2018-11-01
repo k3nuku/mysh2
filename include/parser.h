@@ -22,5 +22,7 @@ int add_string_to_array(int count_of_length, char*** darray, char* string);
 int parse_is_background(char** argv, int* argc);
 int parse_has_pipelining(char** argv, int argc);
 
+int parse_until_pipe_found(char** argv, char*** out_argv, int head);
+
 #endif // PARSER_H_
 
