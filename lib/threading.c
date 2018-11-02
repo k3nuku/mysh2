@@ -13,6 +13,8 @@
 
 #include <signal.h>
 
+int running_child_pid;
+
 int run_pthread(void* thread_instance, void* arguments_to_pass, pthread_t* out_pthread)
 {
   pthread_t thread;
@@ -195,6 +197,8 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
             *out_last_pair = pair;
         }
 
+        if (!is_bgcomm)
+          waitpid(_pid, &child_status, 0);
         // sigchld handler will keep out child not to be zombie
       }
       else
@@ -211,18 +215,12 @@ void thread_wait_child(void* arg) // for background task
 {
   struct thread_argument* ta = (struct thread_argument*)arg;
 
+  running_child_pid = 0;
+  running_child_pid = ta->pid;
+
   int child_status;
-  int last_status;
 
-  while (waitpid(ta->pid, &child_status, WNOHANG) != -1)
-  {
-    if (child_status != last_status)
-    {
-      last_status = child_status;
-      sighandler_bg(ta->pid, ta->argv, child_status);
-    }
-  }
-
+  waitpid(ta->pid, &child_status, 0);
   sighandler_bg(ta->pid, ta->argv, child_status);
 
   free_argv(ta->argv);

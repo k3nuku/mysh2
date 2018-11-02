@@ -8,6 +8,8 @@
 #include <sys/types.h> 
 #include <sys/wait.h>
 
+extern pid_t running_child_pid;
+
 void signal_setup()
 {
   signal(SIGINT, SIG_IGN);
@@ -15,7 +17,7 @@ void signal_setup()
   signal(SIGTTOU, SIG_IGN);
   signal(SIGTTIN, SIG_IGN);
 
-  zombie_watchdog();
+  //zombie_watchdog();
 }
 
 void zombie_watchdog()
@@ -36,14 +38,10 @@ int kill_pid(pid_t pid)
 
 void kill_backgrounds()
 {
-  int z_pid;
-
-  printf("zpid: %d\n", waitpid(-1, NULL, WNOHANG));
-
-  while((z_pid = waitpid(-1, NULL, WNOHANG)) > 0)
+  if (running_child_pid > 0)
   {
-    kill(z_pid, SIGKILL);
-    printf("killed pid:%d\n", z_pid);
+    kill(running_child_pid, SIGKILL);
+    printf("killed background process id: %d\n", running_child_pid);
   }
 }
 
@@ -59,7 +57,7 @@ void zombieproc_handler(int signal)
 
 int is_zombie_exist()
 {
-  return waitpid(-1, NULL, WNOHANG) == -1 ? 0 : 1;
+  return waitpid(-1, NULL, WNOHANG) > 0 ? 1 : 0;
 }
 
 void sighandler_bg(int pid, char** command, int child_status)
