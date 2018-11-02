@@ -40,6 +40,12 @@ int main()
     assert(argv != NULL);
     if (strcmp(argv[0], "exit") == 0) {
       FREE_2D_ARRAY(argc, argv);
+
+      kill_backgrounds();
+
+      if (is_zombie_exist())
+        printf("zombie alert\n");
+
       break;
     }
 

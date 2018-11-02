@@ -13,8 +13,6 @@
 
 #include <signal.h>
 
-static struct pthread_pool pool;
-
 int run_pthread(void* thread_instance, void* arguments_to_pass, pthread_t* out_pthread)
 {
   pthread_t thread;
@@ -44,6 +42,7 @@ int process_bgcommand(char** argv)
 {
   pid_t child_id;
   char** argvdupd;
+  struct thread_argument* sa;
 
   if ((child_id = execute_command(argv, 1, 0, NULL, NULL, -1)) == -1) // executing background command, with other pgid
   {
@@ -54,8 +53,6 @@ int process_bgcommand(char** argv)
   else printf("[1] %d\n", child_id);
 
   argvdup(argv, &argvdupd);
-
-  struct thread_argument* sa;
 
   sa = (struct thread_argument*)malloc(sizeof(struct thread_argument));
   sa->pid = child_id;
@@ -172,8 +169,10 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
       {
         setpgid(0, 0); // 별도 process group 할당(stdin/out 분리), for background processing
         tcsetpgrp(STDIN_FILENO, getppid()); // 가져온 foreground의 stdin을 parent pid에 연결하여 되돌림
-        // 이러면 mysh에 다시 return 되긴 함, 대신 stdout은 리디렉션 안했으므로 output이 계속 나옴..
       }
+
+      signal(SIGINT, SIG_DFL);
+      signal(SIGTSTP, SIG_DFL);
 
       execvp(argv[0], argv);
 
@@ -196,9 +195,7 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
             *out_last_pair = pair;
         }
 
-        if (!is_bgcomm)
-          waitpid(-1, &child_status, 0);
-        else kill(_pid, SIGTSTP);
+        // sigchld handler will keep out child not to be zombie
       }
       else
       {
@@ -207,9 +204,6 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
       }
   }
 
-  printf("retval: %d, pid:%d, return: %d\n", retval, _pid,
-    retval ? _pid : -1);
-
   return retval ? _pid : -1;
 }
 
@@ -217,12 +211,10 @@ void thread_wait_child(void* arg) // for background task
 {
   struct thread_argument* ta = (struct thread_argument*)arg;
 
-  printf("inthread: pid: %d\n", ta->pid);
-
   int child_status;
   int last_status;
 
-  while ((child_status = waitpid(-1, &child_status, WNOHANG)) != -1)
+  while (waitpid(ta->pid, &child_status, WNOHANG) != -1)
   {
     if (child_status != last_status)
     {
@@ -230,6 +222,8 @@ void thread_wait_child(void* arg) // for background task
       sighandler_bg(ta->pid, ta->argv, child_status);
     }
   }
+
+  sighandler_bg(ta->pid, ta->argv, child_status);
 
   free_argv(ta->argv);
   free(ta);

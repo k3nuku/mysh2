@@ -135,28 +135,58 @@ int do_fg(int argc, char** argv)
 {
   int status;
 
+  errno = 0;
+
   if (argv[1]) // move provided process in/out to foreground
   {
-    signal(SIGTTOU, SIG_IGN);
-    tcsetpgrp(0, atoi(argv[1])); // 받은 pid의 stdin을 stdin에 할당
+    signal(SIGINT, SIG_DFL);
+    signal(SIGTSTP, SIG_DFL);
+    signal(SIGTTOU, SIG_IGN); // free-pass
+
+    if (tcsetpgrp(0, atoi(argv[1]))) // 받은 pid의 stdin을 stdin에 할당
+      return -1;
+    
     signal(SIGTTOU, SIG_DFL);
-    printf("%d running\n", atoi(argv[1]));
 
     waitpid(atoi(argv[1]), &status, 0); // 끝날 때 까지 대기
 
-    signal(SIGTTOU, SIG_IGN);
+    signal(SIGTTOU, SIG_IGN); // free-pass
     tcsetpgrp(0, getpid()); // 자식 process의 stdin을 다시 shell의 stdin로 되돌림
-    signal(SIGTTOU, SIG_DFL);
+
+    signal_setup();
+
+    return 0;
   }
   else // if empty, prints error
     return -1025;
 
-  return -2;
+  return errno ? errno : 0;
 }
 
 void err_fg(int err_code)
 {
+  switch (err_code)
+  {
+    case -1025:
+      fprintf(stderr, "fg: pid should be served as argument\n");
+      break;
 
+    case -1:
+      fprintf(stderr, "fg: no such job\n");
+      break;
+
+    case ENOTTY:
+      fprintf(stderr, "fg: job doesn't have tty\n");
+      break;
+
+    case EINVAL:
+      fprintf(stderr, "fg: invalid job\n");
+      break;
+
+    default:
+      fprintf(stderr, "fg: an unknown error has occured while fg\n");
+      break;
+  }
 }
 
 int do_kill(int argc, char** argv)

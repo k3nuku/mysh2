@@ -10,11 +10,23 @@
 
 void signal_setup()
 {
-  //signal(SIGINT, SIG_IGN);
+  signal(SIGINT, SIG_IGN);
   signal(SIGTSTP, SIG_IGN);
-  signal(SIGCHLD, (void *)sighandle_callback);
-  signal(SIGTTOU, (void *)sighandle_callback);
-  signal(SIGTTIN, (void *)sighandle_callback);
+  signal(SIGTTOU, SIG_IGN);
+  signal(SIGTTIN, SIG_IGN);
+
+  zombie_watchdog();
+}
+
+void zombie_watchdog()
+{
+  struct sigaction sigact;
+  sigact.sa_handler = zombieproc_handler;
+  sigact.sa_flags = SA_NODEFER | SA_NOCLDWAIT;
+  
+  sigemptyset(&sigact.sa_mask);
+  
+  sigaction(SIGCHLD, &sigact, NULL);
 }
 
 int kill_pid(pid_t pid)
@@ -22,57 +34,46 @@ int kill_pid(pid_t pid)
   return send_signal(pid, SIGKILL);
 }
 
+void kill_backgrounds()
+{
+  int z_pid;
+
+  printf("zpid: %d\n", waitpid(-1, NULL, WNOHANG));
+
+  while((z_pid = waitpid(-1, NULL, WNOHANG)) > 0)
+  {
+    kill(z_pid, SIGKILL);
+    printf("killed pid:%d\n", z_pid);
+  }
+}
+
 int send_signal(pid_t pid, int signal)
 {
-  if (kill(pid, signal) != 0)
-    return errno;
-  else return 1;
+  return kill(pid, signal) != 0 ? errno : 1;
 }
  
-// signal handler for parent(main) process
-void sighandle_callback(int signal)
+void zombieproc_handler(int signal)
 {
-  switch (signal)
-  {
-    case SIGCHLD:
-      //printf("zombie created\n");
-      break;
-    
-    case SIGTTOU: // background process가 stdout을 쓰게 해달라고 신호 보냄
-      printf("background want to use stdout\n");
-      break;
+  while (waitpid(-1, NULL, WNOHANG) > 0);
+}
 
-    case SIGTTIN: // background process가 stdin을 쓰게 해달라고 신호 보냄
-      printf("background want to use stdin\n");
-      //send_signal()
-      //kill(-1, SIGTSTP); // send stop signal to process
-
-      break;
-
-    default: // or send signal normally
-      send_signal(getpid(), signal);
-  }
+int is_zombie_exist()
+{
+  return waitpid(-1, NULL, WNOHANG) == -1 ? 0 : 1;
 }
 
 void sighandler_bg(int pid, char** command, int child_status)
 {
   if (WIFEXITED(child_status))
-  {
     printf("[%d]  + %d done\t", 1, pid);
-  }
   else if (WCOREDUMP(child_status))
-  {
     printf("[%d]  + %d segmentation fault\t", 1, pid);
-  }
   else if (WIFSTOPPED(child_status))
-  {
     printf("[%d]  + %d suspended\t", 1, pid);
-  }
   else if (WIFSIGNALED(child_status))
-  {
-    printf("[%d]  + %d signaled\t", 1, pid);
-  }
-  else printf("[%d]  + %d not_supported_signaled\t", 1, pid);
+    printf("[%d]  + %d signaled: %d\t", 1, pid, child_status);
+  else
+    printf("[%d]  + %d not_supported_signaled\t", 1, pid);
 
   int i = 0;
 
