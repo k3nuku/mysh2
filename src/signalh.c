@@ -10,20 +10,11 @@
 
 void signal_setup()
 {
-  catch_sigint();
-  catch_sigstp();
-}
-
-// ctrl+c
-void catch_sigint()
-{
-  signal(SIGINT, (void *)sighandle_callback);
-}
-
-// ctrl+z
-void catch_sigstp()
-{
-  signal(SIGTSTP, (void *)sighandle_callback);
+  //signal(SIGINT, SIG_IGN);
+  signal(SIGTSTP, SIG_IGN);
+  signal(SIGCHLD, (void *)sighandle_callback);
+  signal(SIGTTOU, (void *)sighandle_callback);
+  signal(SIGTTIN, (void *)sighandle_callback);
 }
 
 int kill_pid(pid_t pid)
@@ -43,12 +34,21 @@ void sighandle_callback(int signal)
 {
   switch (signal)
   {
-    case SIGINT: // ignoring ctrl+c
-      break;
-
-    case SIGTSTP: // ignoring ctrl+z
+    case SIGCHLD:
+      //printf("zombie created\n");
       break;
     
+    case SIGTTOU: // background process가 stdout을 쓰게 해달라고 신호 보냄
+      printf("background want to use stdout\n");
+      break;
+
+    case SIGTTIN: // background process가 stdin을 쓰게 해달라고 신호 보냄
+      printf("background want to use stdin\n");
+      //send_signal()
+      //kill(-1, SIGTSTP); // send stop signal to process
+
+      break;
+
     default: // or send signal normally
       send_signal(getpid(), signal);
   }
@@ -62,7 +62,7 @@ void sighandler_bg(int pid, char** command, int child_status)
   }
   else if (WCOREDUMP(child_status))
   {
-    printf("[%d]  + %d core dumped\t", 1, pid);
+    printf("[%d]  + %d segmentation fault\t", 1, pid);
   }
   else if (WIFSTOPPED(child_status))
   {
@@ -70,9 +70,7 @@ void sighandler_bg(int pid, char** command, int child_status)
   }
   else if (WIFSIGNALED(child_status))
   {
-    if (child_status == 11)
-      printf("[%d]  + %d Segmentation fault\t", 1, pid);
-    else printf("[%d]  + %d signaled\t", 1, pid);
+    printf("[%d]  + %d signaled\t", 1, pid);
   }
   else printf("[%d]  + %d not_supported_signaled\t", 1, pid);
 

@@ -133,12 +133,30 @@ void err_cd(int err_code)
 
 int do_fg(int argc, char** argv)
 {
-  return -1;
+  int status;
+
+  if (argv[1]) // move provided process in/out to foreground
+  {
+    signal(SIGTTOU, SIG_IGN);
+    tcsetpgrp(0, atoi(argv[1])); // 받은 pid의 stdin을 stdin에 할당
+    signal(SIGTTOU, SIG_DFL);
+    printf("%d running\n", atoi(argv[1]));
+
+    waitpid(atoi(argv[1]), &status, 0); // 끝날 때 까지 대기
+
+    signal(SIGTTOU, SIG_IGN);
+    tcsetpgrp(0, getpid()); // 자식 process의 stdin을 다시 shell의 stdin로 되돌림
+    signal(SIGTTOU, SIG_DFL);
+  }
+  else // if empty, prints error
+    return -1025;
+
+  return -2;
 }
 
 void err_fg(int err_code)
 {
-  
+
 }
 
 int do_kill(int argc, char** argv)

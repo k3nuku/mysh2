@@ -58,7 +58,7 @@ int create_server_unix_socketpair()
 
   bzero(&s_addr, sizeof(s_addr));
 
-  char cnt_string[10];
+  char cnt_string[255];
   sprintf(cnt_string, "%d", sock_count);
 
   strcpy(s_addr.sun_path, UNIXSOCK_NAME);

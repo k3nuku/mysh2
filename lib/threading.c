@@ -11,6 +11,10 @@
 #include <errno.h>
 #include <string.h>
 
+#include <signal.h>
+
+static struct pthread_pool pool;
+
 int run_pthread(void* thread_instance, void* arguments_to_pass, pthread_t* out_pthread)
 {
   pthread_t thread;
@@ -38,131 +42,36 @@ int wait_pthread_finishes(pthread_t* thread)
 // returns created pthread id
 int process_bgcommand(char** argv)
 {
-  pid_t* pid;
-  int child_status;
+  pid_t child_id;
   char** argvdupd;
 
-  argvdup(argv, &argvdupd); // copy argv to another memory space
-
-  // using forked process to waiting working pthread(client) (non-blocking, synchronous callback)
-  pid = (pid_t *)malloc(sizeof(pid_t));
-
-  // fork current process to wait background task
-  pid[0] = fork();
-
-  if (pid[0] == 0) // child (processing bgtask)
+  if ((child_id = execute_command(argv, 1, 0, NULL, NULL, -1)) == -1) // executing background command, with other pgid
   {
-    int* pair; // create socketpair made with unix socket
-
-    if ((pair = create_unix_socketpair()))
-    {
-      pthread_t thread;
-
-      // server reads stdout and print to file
-
-      // argv에 client socket reference 저장
-      void** c_data = (void **)calloc(2, sizeof(void *));
-      c_data[0] = (void *)(&pair[2]); // clientside-client socket
-      c_data[1] = (void *)argvdupd;
-
-      // run background process with pthread
-      // and redirects output to argv[0].pool_id.stdout in current directory
-      if (run_pthread((void *)thread_bgcomm_execute, (void *)c_data, &thread) > -1)
-      {
-        // put pthread into threadpool
-        // but mysh implementation requires just one background process, no thread pool needed
-
-        wait_pthread_finishes(&thread);
-      }
-      else fprintf(stderr, "failed to create pthread\n");
-    }
-    else fprintf(stderr, "failed to create socketpair\n");
-
-    free_argv(argvdupd); // we need to free argvdupd twice because fork copies all of process memory
-
-    exit(0);
-  }
-  else if (pid[0] > 0) // parent
-  {
-    pthread_t thread;
-
-    void** c_data = (void **)calloc(2, sizeof(void *));
-    c_data[0] = (void *)pid;
-    c_data[1] = (void *)argvdupd;
-
-    printf("[%d] %d\n", 1, pid[0]); // print pid and do work normally
-    run_pthread((void *)thread_wait_child, (void *)c_data, &thread); // not to make a zombie proc
-  }
-  else
-  {
-    fprintf(stderr, "an unexpected error has occured while fork current process\n");
+    fprintf(stderr, "an error has occured while excuting background command\n");
+    
     return 0;
   }
+  else printf("[1] %d\n", child_id);
 
-  return 1;
-}
+  argvdup(argv, &argvdupd);
 
-int process_pipecommand(char** argv)
-{
-  pid_t* pid;
-  int child_status;
-  char** argvdupd;
+  struct thread_argument* sa;
 
-  argvdup(argv, &argvdupd); // copy argv to another memory space
+  sa = (struct thread_argument*)malloc(sizeof(struct thread_argument));
+  sa->pid = child_id;
+  sa->argv = argvdupd;
 
-  // using forked process to waiting working pthread(client) (non-blocking, synchronous callback)
-  pid = (pid_t *)malloc(sizeof(pid_t));
+  pthread_t thread;
+  pthread_attr_t thread_attr;
+  pthread_attr_init(&thread_attr);
 
-  // fork current process to wait background task
-  pid[0] = fork();
-
-  if (pid[0] == 0) // child (processing bgtask)
+  if (pthread_create(&thread, &thread_attr, (void *)thread_wait_child, (void *)sa) < 0)
   {
-    int* pair; // create socketpair made with unix socket
+    fprintf(stderr, "failed to create pthread while processing background command\n");
 
-    if ((pair = create_unix_socketpair()))
-    {
-      pthread_t thread;
-
-      // argv에 client socket reference 저장
-      void** c_data = (void **)calloc(2, sizeof(void *));
-      c_data[0] = (void *)(&pair[2]); // clientside-client socket
-      c_data[1] = (void *)argvdupd;
-
-      // run background process with pthread
-      if (run_pthread((void *)thread_bgcomm_execute, (void *)c_data, &thread) > -1)
-      {
-        // put pthread into threadpool
-        // but mysh implementation requires just one background process, no thread pool needed
-
-        wait_pthread_finishes(&thread);
-      }
-      else fprintf(stderr, "failed to create pthread\n");
-    }
-    else fprintf(stderr, "failed to create socketpair\n");
-
-    free_argv(argvdupd); // we need to free argvdupd twice because fork copies all of process memory
-
-    exit(0);
-  }
-  else if (pid[0] > 0) // parent
-  {
-    pthread_t thread;
-
-    void** c_data = (void **)calloc(2, sizeof(void *));
-    c_data[0] = (void *)pid;
-    c_data[1] = (void *)argvdupd;
-
-    printf("[%d] %d\n", 1, pid[0]); // print pid and do work normally
-    run_pthread((void *)thread_wait_child, (void *)c_data, &thread); // not to make a zombie proc
-  }
-  else
-  {
-    fprintf(stderr, "an unexpected error has occured while fork current process\n");
     return 0;
   }
-
-  return 1;
+  else return 1;
 }
 
 int process_fgcommand(char** argv, int argc)
@@ -175,7 +84,7 @@ int process_fgcommand(char** argv, int argc)
   }
   else
   {
-    if (!execute_command(argv, 0, NULL, NULL, -1)) // ordinary process it in foreground
+    if (execute_command(argv, 0, 0, NULL, NULL, -1) == -1) // ordinary process it in foreground
       return 0;
     else return 1;  
   }
@@ -190,14 +99,12 @@ int process_pipelining(char** argv, int argc)
   int *pair, *last_pair;
   int head = 0;
 
-  //int back_stdout = dup(STDOUT_FILENO);
-
   while (argv[head] != NULL)
   {
     char** argv_pipe = NULL;
     head = parse_until_pipe_found(argv, &argv_pipe, head);
 
-    // if there is a next command then create new pipe
+    // if there is a next command then create a new pipe
     if (argv[head] != NULL)
     {
       if ((pair = create_unix_socketpair()) < 0)
@@ -213,29 +120,27 @@ int process_pipelining(char** argv, int argc)
     //    parent(main)=close-stdout, redirect stdout to socket (stdout to child)
     //    child(n-th-pipe)=close-stdin, redirect stdin/stdout to socket (stdout to next child or main)
     //    printf("executing %s\n", argv_pipe[0]);
-    execute_command(argv_pipe, 1, &last_pair, pair,
-      argv[head] == NULL ? 1 : 0);
+    execute_command(argv_pipe, 0, 1, &last_pair, pair,
+      argv[head] == NULL ? 1 : 0); // ignoring returned pid
 
     free_argv(argv_pipe); // dispose argv used at individual process pipelining
   }
 
-  //dup2(back_stdout, STDOUT_FILENO)
-
   return 1;
 }
 
-int execute_command(char** argv, int is_pipecomm, int** out_last_pair, int* pair, int last_command)
+int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_pair, int* pair, int last_command)
 {  
   int child_status;
   int retval = 1;
 
   int* last_pair;
 
-  pid_t _pid;
-  _pid = fork();
-
   if (is_pipecomm)
     last_pair = *out_last_pair;
+
+  pid_t _pid;
+  _pid = fork();
 
   switch (_pid)
   {
@@ -263,10 +168,17 @@ int execute_command(char** argv, int is_pipecomm, int** out_last_pair, int* pair
         }
       }
 
+      if (is_bgcomm)
+      {
+        setpgid(0, 0); // 별도 process group 할당(stdin/out 분리), for background processing
+        tcsetpgrp(STDIN_FILENO, getppid()); // 가져온 foreground의 stdin을 parent pid에 연결하여 되돌림
+        // 이러면 mysh에 다시 return 되긴 함, 대신 stdout은 리디렉션 안했으므로 output이 계속 나옴..
+      }
+
       execvp(argv[0], argv);
 
       fprintf(stderr, "exec failed\n");
-      retval = 0; // non-reachable code block
+      retval = -1; // unreachable code block
       break;
 
     default:
@@ -283,54 +195,42 @@ int execute_command(char** argv, int is_pipecomm, int** out_last_pair, int* pair
           if (!last_command) // first command, middle command
             *out_last_pair = pair;
         }
-        
-        waitpid(-1, &child_status, 0);
+
+        if (!is_bgcomm)
+          waitpid(-1, &child_status, 0);
+        else kill(_pid, SIGTSTP);
       }
       else
       {
         printf("fork failed\n");
-        retval = 0;
+        retval = -1;
       }
   }
 
-  return retval;
+  printf("retval: %d, pid:%d, return: %d\n", retval, _pid,
+    retval ? _pid : -1);
+
+  return retval ? _pid : -1;
 }
 
-void thread_bgcomm_execute(void* arg)
+void thread_wait_child(void* arg) // for background task
 {
-  // how about case of 'ls | grep &'
-  // : each commands are being executed asynchronously, grep with "&" and ls
-  // zsh does not execute pipelining; don't need to implement
+  struct thread_argument* ta = (struct thread_argument*)arg;
 
-  // deserialize arg -> clientside_socket, argv
-  void** args = (void **)arg;
-  int* c_fd = (int*)args[0]; // purpose of redirecting stdout to socket
-  char** argv = (char**)args[1];
-
-  // closing stdin/out
-  close(0);
-  close(1);
-  
-  if (dup2(*c_fd, 1) > 0)
-  {
-    execute_command(argv, 0, NULL, NULL, -1); // executing command
-  }
-  else fprintf(stderr, "an error has occured while redirect stdout to socket\n");
-}
-
-void thread_wait_child(void* arg)
-{
-  void** c_data = (void **)arg;
-
-  pid_t* pid = (pid_t *)c_data[0];
-  char** argv = (char **)c_data[1];
+  printf("inthread: pid: %d\n", ta->pid);
 
   int child_status;
+  int last_status;
 
-  waitpid(-1, &child_status, 0);
-  sighandler_bg(*(int *)pid, argv, child_status);
+  while ((child_status = waitpid(-1, &child_status, WNOHANG)) != -1)
+  {
+    if (child_status != last_status)
+    {
+      last_status = child_status;
+      sighandler_bg(ta->pid, ta->argv, child_status);
+    }
+  }
 
-  free((pid_t *)pid); 
-  free_argv(argv);
-  free(c_data);
+  free_argv(ta->argv);
+  free(ta);
 }

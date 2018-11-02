@@ -11,7 +11,13 @@ struct pthread_pool
   pthread_t* head;    // link to head
   pthread_t* next;    // link to next thread
   pthread_t* thread;  // link to current thread
-} pthread_pool_t;
+} pthread_pool;
+
+struct thread_argument
+{
+  int pid;
+  char** argv;
+} thread_argument;
 
 int run_pthread(void* thread_instance, void* arguments_to_pass, pthread_t* out_pthread);
 int wait_pthread_finishes(pthread_t* thread);
@@ -21,7 +27,7 @@ int process_fgcommand(char** argv, int argc);
 int process_pipecommand(char** argv);
 int process_pipelining(char** argv, int argc);
 
-int execute_command(char** argv, int is_pipecomm, int** last_pair, int* pair, int last_command);
+int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** last_pair, int* pair, int last_command);
 
 void thread_bgcomm_execute(void* arg);
 void thread_pipe_execute(void* arg);

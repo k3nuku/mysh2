@@ -18,6 +18,9 @@ unit_test_socket:
 	  -I./include $(LIB)
 	./unit_test_socket
 
+sleep:
+	$(CC) -o sleep_test ./tests/sleep_test.c
+
 func_test:
 	touch scoring.txt
 	rm scoring.txt
