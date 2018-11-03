@@ -15,7 +15,7 @@ unit_test:
 unit_test_socket:
 	$(CC) -o unit_test_socket ./lib/socketpair.c ./tests/socketpair_test.c \
 	  ./lib/threading.c ./src/signalh.c ./lib/parser.c ./lib/utils.c \
-	  -I./include $(LIB)
+	  ./lib/fs.c -I./include $(LIB)
 	./unit_test_socket
 
 sleep:

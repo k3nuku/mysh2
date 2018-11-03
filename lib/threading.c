@@ -201,12 +201,7 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
   int* last_pair;
 
   if (is_pipecomm)
-  {
-    if (!out_last_pair)
-      last_pair = *out_last_pair;
-    else
-      last_pair = NULL;
-  }
+    last_pair = *out_last_pair;
 
   pid_t _pid;
   _pid = fork();

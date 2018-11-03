@@ -25,25 +25,31 @@ int* create_unix_socketpair()
   {
     if (run_pthread((void *)create_client_unix_socketpair, NULL, &pthread_cli))
     {
+      void* retval_cli, *retval_srv;
       int join_status_srv = 0;
       int join_status_cli = 0;
 
-      int retval_cli;
-      join_status_srv = pthread_join(pthread_cli, (void**)&retval_cli);
+      join_status_cli = pthread_join(pthread_cli, &retval_cli);
+      //printf("retvalcli %d\n", *((int*)retval_cli));
 
-      int retval_srv;
-      join_status_cli = pthread_join(pthread_srv, (void**)&retval_srv);
+      join_status_srv = pthread_join(pthread_srv, &retval_srv);
+      //printf("retvalsrv %d\n", *((int*)retval_srv));
 
       if (join_status_cli || join_status_srv)
         fprintf(stderr, "error occured while join client and server thread\n");
       else
       {
+        //printf("threadstatus; c%d s%d\n", join_status_cli, join_status_srv);
+        //printf("retval s%d c%d\n", *((int*)retval_srv), *((int*)retval_cli));
+
         retpair = (int *)calloc(3, sizeof(int));
         memset(retpair, -1, sizeof(int));
 
-        retpair[0] = retval_srv >> 16;
-        retpair[1] = retval_srv & 0xFFFF;
-        retpair[2] = retval_cli;
+        retpair[0] = *((int*)retval_srv) >> 16;
+        retpair[1] = *((int*)retval_srv) & 0xFFFF;
+        retpair[2] = *((int*)retval_cli);
+
+        //printf("[main] received %d %d %d\n", retpair[0], retpair[1], retpair[2]);
 
         sock_count++; // not to make duplicated socket fd
       }
@@ -69,6 +75,8 @@ int* create_unix_socketpair()
 int create_server_unix_socketpair()
 {
   int success = 0;
+
+  static int retval = 0;
 
   int s_socket_fd, c_socket_fd;
   struct sockaddr_un s_addr, c_addr;
@@ -107,14 +115,20 @@ int create_server_unix_socketpair()
   }
   else perror("[s] create socket failed");
 
-  return success ? ((s_socket_fd << 16) | c_socket_fd) : -1;
+  //fprintf(stdout, "res sfd%d cfd%d return%d\n", s_socket_fd, c_socket_fd, success ? ((s_socket_fd << 16) | c_socket_fd) : -1);
+
+  retval = (s_socket_fd << 16) | c_socket_fd;
+
+  if (success)
+    pthread_exit((void*)&retval);
+  else pthread_exit((void*)-1);
 }
 
 int create_client_unix_socketpair()
 {
   int success = 0;
 
-  int c_socket_fd;  
+  static int c_socket_fd;  
   struct sockaddr_un c_addr;
 
   c_addr.sun_family = AF_UNIX;
@@ -139,7 +153,11 @@ int create_client_unix_socketpair()
     usleep(10); // server thread should create socket in 10*CLIENT_SOCK_MAX_RETRIES milliseconds (def: 100ms)
   }
 
-  return success ? c_socket_fd : -1;
+  //fprintf(stdout, "[c]returning cfd%d\n", success ? c_socket_fd : -1);
+  
+  if (success)
+    pthread_exit((void*)&c_socket_fd);
+  else pthread_exit((void*)-1);
 }
 
 int socketpair_receive(int socket_fd, int bufsize, char** out_data)
