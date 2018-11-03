@@ -74,6 +74,7 @@ int process_bgcommand(char** argv)
   pthread_t thread;
   pthread_attr_t thread_attr;
   pthread_attr_init(&thread_attr);
+  pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
 
   if (pthread_create(&thread, &thread_attr, (void *)thread_wait_child, (void *)sa) < 0)
   {
@@ -129,6 +130,7 @@ int process_internal_bgcommand(struct command_entry* entry, char** argv, int arg
     pthread_t thread;
     pthread_attr_t thread_attr;
     pthread_attr_init(&thread_attr);
+    pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
 
     if (pthread_create(&thread, &thread_attr, (void *)thread_wait_child, (void *)sa) < 0)
     {
