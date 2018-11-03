@@ -257,6 +257,8 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
           {
             close(last_pair[1]);
             close(last_pair[2]);
+            
+            free(last_pair);
           }
 
           if (!last_command) // first command, middle command
