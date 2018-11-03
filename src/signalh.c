@@ -79,7 +79,21 @@ void sighandler_bg(int pid, char** command, int child_status)
   else if (WIFSTOPPED(child_status))
     printf("[%d]  + %d suspended\t", 1, pid);
   else if (WIFSIGNALED(child_status))
-    printf("[%d]  + %d signaled: %d\t", 1, pid, child_status);
+  {
+    switch (child_status)
+    {
+      case SIGKILL:
+        printf("[%d]  + %d killed\t", 1, pid);
+        break;
+
+      case SIGINT:
+        printf("[%d]  + %d interrupted\t", 1, pid);
+        break;
+
+      default:
+        printf("[%d]  + %d signaled: %d\t", 1, pid, child_status);
+    }
+  }
   else
     printf("[%d]  + %d not_supported_signaled\t", 1, pid);
 
