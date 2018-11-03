@@ -72,7 +72,7 @@ int* create_unix_socketpair()
   }
 }
 
-int create_server_unix_socketpair()
+void* create_server_unix_socketpair()
 {
   int success = 0;
 
@@ -117,18 +117,20 @@ int create_server_unix_socketpair()
 
   //fprintf(stdout, "res sfd%d cfd%d return%d\n", s_socket_fd, c_socket_fd, success ? ((s_socket_fd << 16) | c_socket_fd) : -1);
 
-  retval = (s_socket_fd << 16) | c_socket_fd;
-
   if (success)
-    pthread_exit((void*)&retval);
-  else pthread_exit((void*)-1);
+    retval = (s_socket_fd << 16) | c_socket_fd;
+  else retval = -1;
+
+  return &retval;
 }
 
-int create_client_unix_socketpair()
+void* create_client_unix_socketpair()
 {
   int success = 0;
 
-  static int c_socket_fd;  
+  static int retval;
+
+  int c_socket_fd;  
   struct sockaddr_un c_addr;
 
   c_addr.sun_family = AF_UNIX;
@@ -156,8 +158,10 @@ int create_client_unix_socketpair()
   //fprintf(stdout, "[c]returning cfd%d\n", success ? c_socket_fd : -1);
   
   if (success)
-    pthread_exit((void*)&c_socket_fd);
-  else pthread_exit((void*)-1);
+    retval = c_socket_fd;
+  else retval = -1;
+
+  return &retval;
 }
 
 int socketpair_receive(int socket_fd, int bufsize, char** out_data)
