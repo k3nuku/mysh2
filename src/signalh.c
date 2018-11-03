@@ -97,10 +97,13 @@ void sighandler_bg(int pid, char** command, int child_status)
   else
     printf("[%d]  + %d not_supported_signaled\t", 1, pid);
 
-  int i = 0;
+  if (command != NULL)
+  {
+    int i = 0;
 
-  while (command[i] != NULL)
-    printf("%s ", command[i++]);
- 
+    while (command[i] != NULL)
+      printf("%s ", command[i++]);
+  }
+
   printf("\n");
 }
