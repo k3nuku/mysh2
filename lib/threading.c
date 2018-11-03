@@ -118,6 +118,7 @@ int process_internal_bgcommand(struct command_entry* entry, char** argv, int arg
     if (ret != 0)
       entry->err(ret);
 
+    free_argv(argv);
     exit(0);
   }
   else if (_pid > 0)
