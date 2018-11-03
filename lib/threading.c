@@ -37,8 +37,8 @@ int kill_pthread(pthread_t thread)
 {
   int ret;
 
-  pthread_kill(thread);
-  return pthread_join(thread, (void **)&ret) != 0 : -1 ? 0;
+  pthread_kill(thread, SIGKILL);
+  return pthread_join(thread, (void **)&ret) != 0 ? -1 : 0;
 }
 
 int wait_pthread_finishes(pthread_t* thread)
