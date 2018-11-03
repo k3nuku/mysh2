@@ -105,15 +105,15 @@ int process_fgcommand(char** argv, int argc)
 int process_internal_bgcommand(struct command_entry* entry, char** argv, int argc)
 {
   struct thread_argument* sa;
-  int child_status;
   char** argvdupd;
+  int child_status;
+  int _pid;
 
-  int _pid = fork();
-
-  argvdup(argv, &argvdupd);
-
-  if (_pid == 0)
+  if ((_pid = fork()) == 0)
   {
+    setpgid(0, 0); // 별도 process group 할당(stdin/out 분리), for background processing
+    tcsetpgrp(STDIN_FILENO, getppid()); // 가져온 foreground의 stdin을 parent pid에 연결하여 되돌림
+
     int ret = entry->command_func(argc, argv);
     if (ret != 0)
       entry->err(ret);
@@ -123,6 +123,8 @@ int process_internal_bgcommand(struct command_entry* entry, char** argv, int arg
   else if (_pid > 0)
   {
     printf("[1] %d\n", _pid);
+
+    argvdup(argv, &argvdupd);
 
     sa = (struct thread_argument*)malloc(sizeof(struct thread_argument));
     sa->pid = _pid;
@@ -246,7 +248,7 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
       execvp(argv[0], argv);
 
       fprintf(stderr, "exec failed\n");
-      retval = -1; // unreachable code block
+      retval = 0; // unreachable code block
       exit(0);
       break;
 
@@ -267,12 +269,11 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
 
         if (!is_bgcomm)
           waitpid(_pid, &child_status, 0);
-        // sigchld handler will keep out child not to be zombie
       }
       else
       {
         printf("fork failed\n");
-        retval = -1;
+        retval = 0;
       }
   }
 
