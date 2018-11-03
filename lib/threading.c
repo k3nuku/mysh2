@@ -180,7 +180,7 @@ int process_pipelining(char** argv, int argc)
     //    printf("executing %s\n", argv_pipe[0]);
     if (does_exefile_exists(argv_pipe[0]))
       execute_command(argv_pipe, 0, 1, &last_pair, pair,
-        argv[head] == NULL ? 1 : 0)) // ignoring returned pid
+        argv[head] == NULL ? 1 : 0); // ignoring returned pid
     else
       fprintf(stderr, "%s: command not found.\n", argv_pipe[0]);
 
