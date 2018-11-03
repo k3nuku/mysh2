@@ -58,6 +58,12 @@ int process_bgcommand(char** argv)
   char** argvdupd;
   struct thread_argument* sa;
 
+  if (running_child_pid != 0)
+  {
+    fprintf(stderr, "mysh: background process limited to run 1 process\n");
+    return 0;
+  }
+
   if ((child_id = execute_command(argv, 1, 0, NULL, NULL, -1)) == -1) // executing background command, with other pgid
   {
     fprintf(stderr, "an error has occured while excuting background command\n");
@@ -80,7 +86,6 @@ int process_bgcommand(char** argv)
   if (pthread_create(&thread, &thread_attr, (void *)thread_wait_child, (void *)sa) < 0)
   {
     fprintf(stderr, "failed to create pthread while processing background command\n");
-
     return 0;
   }
   else return 1;
