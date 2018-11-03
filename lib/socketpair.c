@@ -9,7 +9,7 @@
 #include <sys/un.h>
 #include <errno.h>
 
-#define UNIXSOCK_NAME "/private/tmp/mysh"
+#define UNIXSOCK_NAME "/tmp/mysh"
 #define UNIXSOCK_EXT ".sock"
 
 #define CLIENT_SOCK_MAX_RETRIES 10
@@ -39,11 +39,20 @@ int* create_unix_socketpair()
     }
     else fprintf(stderr, "failed to create clientside socket pthread\n");  
   }
-  else fprintf(stderr, "failed to create serverside socket pthread\n");
-  
-  if (retpair == NULL || (retpair[0] != -1 && retpair[1] != -1 && retpair[2] != -1))
-    return retpair;
-  else return NULL;
+  else
+  {
+    fprintf(stderr, "failed to create serverside socket pthread, killing server thread\n");
+    kill_pthread(pthread_srv);
+  }
+
+  if (!retpair)
+    return NULL;
+  else
+  {
+    if (retpair[0] != -1 && retpair[1] != -1 && retpair[2] != -1)
+      return retpair;
+    else return NULL;
+  }
 }
 
 int create_server_unix_socketpair()

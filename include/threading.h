@@ -11,6 +11,7 @@ struct thread_argument
 } thread_argument;
 
 int run_pthread(void* thread_instance, void* arguments_to_pass, pthread_t* out_pthread);
+int kill_pthread(pthread_t thread);
 int wait_pthread_finishes(pthread_t* thread);
 
 int process_bgcommand(char** argv);
