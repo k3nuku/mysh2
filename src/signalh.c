@@ -16,8 +16,18 @@ void signal_setup()
   signal(SIGTSTP, SIG_IGN);
   signal(SIGTTOU, SIG_IGN);
   signal(SIGTTIN, SIG_IGN);
+  signal(SIGTERM, (void *)zombie_alert);
 
   //zombie_watchdog();
+}
+
+void zombie_alert(int signal)
+{
+  int zombie_status = waitpid(-1, NULL, WNOHANG) > -1 ? 1 : 0;
+  zombie_status = 1;
+
+  if (zombie_status)
+    printf("zombie alert\n");
 }
 
 void zombie_watchdog()
@@ -31,7 +41,7 @@ void zombie_watchdog()
   sigaction(SIGCHLD, &sigact, NULL);
 }
 
-int kill_pid(pid_t pid)
+int kill_pid(int pid)
 {
   return send_signal(pid, SIGKILL);
 }
@@ -45,7 +55,7 @@ void kill_backgrounds()
   }
 }
 
-int send_signal(pid_t pid, int signal)
+int send_signal(int pid, int signal)
 {
   return kill(pid, signal) != 0 ? errno : 1;
 }

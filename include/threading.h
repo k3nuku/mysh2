@@ -2,16 +2,7 @@
 #define THREADING_H_
 
 #include <pthread.h>
-
-struct pthread_pool
-{
-  int thread_index;   // thread index for identify background process
-  int* std_socket_fd; // socket fd for pthread sdio (server-client socket)
-
-  pthread_t* head;    // link to head
-  pthread_t* next;    // link to next thread
-  pthread_t* thread;  // link to current thread
-} pthread_pool;
+#include <commands.h>
 
 struct thread_argument
 {
@@ -26,6 +17,7 @@ int process_bgcommand(char** argv);
 int process_fgcommand(char** argv, int argc);
 int process_pipecommand(char** argv);
 int process_pipelining(char** argv, int argc);
+int process_internal_bgcommand(struct command_entry* entry, char** argv, int argc);
 
 int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** last_pair, int* pair, int last_command);
 

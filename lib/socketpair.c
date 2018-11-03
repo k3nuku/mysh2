@@ -35,10 +35,9 @@ int* create_unix_socketpair()
       retpair[1] = retval_srv & 0xFFFF;
       retpair[2] = retval_cli;
 
-      //printf("created pair%d sfd: %d, scfd: %d, ccfd: %d\n", sock_count + 1, retpair[0], retpair[1], retpair[2]);
-      sock_count++;
+      sock_count++; // not to make duplicated socket fd
     }
-    else fprintf(stderr, "failed to create serverside socket pthread\n");  
+    else fprintf(stderr, "failed to create clientside socket pthread\n");  
   }
   else fprintf(stderr, "failed to create serverside socket pthread\n");
   
@@ -117,7 +116,7 @@ int create_client_unix_socketpair()
       break;
     }
 
-    usleep(10); // server should create socket in 10*CLIENT_SOCK_MAX_RETRIES milliseconds (def: 100ms)
+    usleep(10); // server thread should create socket in 10*CLIENT_SOCK_MAX_RETRIES milliseconds (def: 100ms)
   }
 
   return success ? c_socket_fd : -1;
@@ -142,7 +141,9 @@ int dispose_socketpair(int* socketpair)
   errno = 0;
 
   for (int i = 2; i > -1; i--)
-    close(socketpair[i]); // clientside -> serverside -> server
+    close(socketpair[i]); // clientside -> serverside -> server (order-sensitive)
+
+  free(socketpair);
 
   return errno ? 0 : 1;
 }

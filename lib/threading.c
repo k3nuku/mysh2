@@ -89,6 +89,51 @@ int process_fgcommand(char** argv, int argc)
   }
 }
 
+int process_internal_bgcommand(struct command_entry* entry, char** argv, int argc)
+{
+  struct thread_argument* sa;
+  int child_status;
+  char** argvdupd;
+
+  int _pid = fork();
+
+  argvdup(argv, &argvdupd);
+
+  if (_pid == 0)
+  {
+    int ret = entry->command_func(argc, argv);
+    if (ret != 0)
+      entry->err(ret);
+
+    exit(0);
+  }
+  else if (_pid > 0)
+  {
+    printf("[1] %d\n", _pid);
+
+    sa = (struct thread_argument*)malloc(sizeof(struct thread_argument));
+    sa->pid = _pid;
+    sa->argv = argvdupd;
+
+    pthread_t thread;
+    pthread_attr_t thread_attr;
+    pthread_attr_init(&thread_attr);
+
+    if (pthread_create(&thread, &thread_attr, (void *)thread_wait_child, (void *)sa) < 0)
+    {
+      fprintf(stderr, "failed to create pthread while processing background command\n");
+      return 0;
+    }
+  }
+  else
+  {
+    fprintf(stderr, "mysh: unexpected error while fork process for internal command\n");
+    return 0; 
+  }
+
+  return 1;
+}
+
 // how to process n-th pipe
 // using unix socket, produces server-client model each pipes
 // parse pipe delimiter(|) and pop commands from beginning of the argv on
@@ -222,6 +267,8 @@ void thread_wait_child(void* arg) // for background task
 
   waitpid(ta->pid, &child_status, 0);
   sighandler_bg(ta->pid, ta->argv, child_status);
+
+  running_child_pid = 0;
 
   free_argv(ta->argv);
   free(ta);

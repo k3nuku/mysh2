@@ -22,6 +22,9 @@
 #include <string.h>
 #include <assert.h>
 
+#include <sys/types.h>
+#include <unistd.h>
+
 int main()
 {
   signal_setup();
@@ -52,9 +55,17 @@ int main()
     struct command_entry* comm_entry = fetch_command(argv[0]);
 
     if (comm_entry != NULL) { // pre-defined command in mysh
-      int ret = comm_entry->command_func(argc, argv);
-      if (ret != 0) {
-        comm_entry->err(ret);
+      if (parse_is_background(argv, &argc))
+      {
+        if (!process_internal_bgcommand(comm_entry, argv, argc))
+          fprintf(stderr, "mysh: unexpected error has occured while executing internal bg process\n");
+      }
+      else
+      {
+        int ret = comm_entry->command_func(argc, argv);
+        if (ret != 0) {
+          comm_entry->err(ret);
+        }
       }
     } else if (does_exefile_exists(argv[0])) { // check whether it is executable binary then execute
       if (parse_is_background(argv, &argc)) // check whether program should be ran over background
