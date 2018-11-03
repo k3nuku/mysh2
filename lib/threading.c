@@ -151,7 +151,7 @@ int process_internal_bgcommand(struct command_entry* entry, char** argv, int arg
 // each thread redirects stdout to socket, then close the connection
 int process_pipelining(char** argv, int argc)
 {
-  int *pair, *last_pair;
+  int *pair, *last_pair = NULL;
   int head = 0;
 
   while (argv[head] != NULL)
@@ -192,7 +192,12 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
   int* last_pair;
 
   if (is_pipecomm)
-    last_pair = *out_last_pair;
+  {
+    if (!out_last_pair)
+      last_pair = *out_last_pair;
+    else
+      last_pair = NULL;
+  }
 
   pid_t _pid;
   _pid = fork();
