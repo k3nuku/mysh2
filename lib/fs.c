@@ -88,8 +88,3 @@ int check_file_executable(const char* path)
   return (!stat(path, &stat_res) && !S_ISDIR(stat_res.st_mode) &&
     (stat_res.st_mode & S_IXUSR)) ? 1 : 0;
 }
-
-int do_pipe()
-{
-  return -1;
-}
