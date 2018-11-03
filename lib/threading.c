@@ -13,6 +13,9 @@
 
 #include <signal.h>
 
+#include <sys/wait.h>
+#include <sys/types.h>
+
 int running_child_pid;
 
 int run_pthread(void* thread_instance, void* arguments_to_pass, pthread_t* out_pthread)

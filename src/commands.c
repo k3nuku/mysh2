@@ -22,6 +22,9 @@
 #include <errno.h>
 #include <signal.h>
 
+#include <sys/wait.h>
+#include <sys/types.h>
+
 static struct command_entry commands[] =
 {
   {
