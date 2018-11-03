@@ -29,25 +29,24 @@ int* create_unix_socketpair()
       int join_status_cli = 0;
 
       int retval_cli;
-      join_status_srv = pthread_join(pthread_cli, (void**)retval_cli);
+      join_status_srv = pthread_join(pthread_cli, (void**)&retval_cli);
 
       int retval_srv;
-      join_status_cli = pthread_join(pthread_srv, (void**)retval_srv);
+      join_status_cli = pthread_join(pthread_srv, (void**)&retval_srv);
 
       if (join_status_cli || join_status_srv)
-      {
         fprintf(stderr, "error occured while join client and server thread\n");
-        break;
+      else
+      {
+        retpair = (int *)calloc(3, sizeof(int));
+        memset(retpair, -1, sizeof(int));
+
+        retpair[0] = retval_srv >> 16;
+        retpair[1] = retval_srv & 0xFFFF;
+        retpair[2] = retval_cli;
+
+        sock_count++; // not to make duplicated socket fd
       }
-
-      retpair = (int *)calloc(3, sizeof(int));
-      memset(retpair, -1, sizeof(int));
-
-      retpair[0] = retval_srv >> 16;
-      retpair[1] = retval_srv & 0xFFFF;
-      retpair[2] = retval_cli;
-
-      sock_count++; // not to make duplicated socket fd
     }
     else fprintf(stderr, "failed to create clientside socket pthread\n");  
   }
