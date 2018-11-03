@@ -3,6 +3,7 @@
 #include "parser.h"
 #include "socketpair.h"
 #include "utils.h"
+#include "fs.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -177,8 +178,11 @@ int process_pipelining(char** argv, int argc)
     //    parent(main)=close-stdout, redirect stdout to socket (stdout to child)
     //    child(n-th-pipe)=close-stdin, redirect stdin/stdout to socket (stdout to next child or main)
     //    printf("executing %s\n", argv_pipe[0]);
-    execute_command(argv_pipe, 0, 1, &last_pair, pair,
-      argv[head] == NULL ? 1 : 0); // ignoring returned pid
+    if (does_exefile_exists(argv_pipe[0]))
+      execute_command(argv_pipe, 0, 1, &last_pair, pair,
+        argv[head] == NULL ? 1 : 0)) // ignoring returned pid
+    else
+      fprintf(stderr, "%s: command not found.\n", argv_pipe[0]);
 
     free_argv(argv_pipe); // dispose argv used at individual process pipelining
   }
@@ -243,6 +247,7 @@ int execute_command(char** argv, int is_bgcomm, int is_pipecomm, int** out_last_
 
       fprintf(stderr, "exec failed\n");
       retval = -1; // unreachable code block
+      exit(0);
       break;
 
     default:
